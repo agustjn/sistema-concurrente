@@ -1,6 +1,6 @@
 ﻿namespace SistemaConcurrente.Core.Buffer
 {
-    public interface IBufferGestion
+    public interface IBuffer
     {
         public string EstrategiaBuffer { get; }
         public Orden DepositarDato(Orden orden);

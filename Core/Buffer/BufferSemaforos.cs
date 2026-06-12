@@ -2,7 +2,7 @@
 
 namespace SistemaConcurrente.Core.Buffer
 {
-    public class BufferSemaforos : IBufferGestion
+    public class BufferSemaforos : IBuffer
     {
         // Capacidad = N = Tamanio del buffer
         public int Capacidad { get; }
@@ -35,7 +35,8 @@ namespace SistemaConcurrente.Core.Buffer
             _lleno = new SemaphoreSlim(0, Capacidad);
             Libre = 0;
             Ocupado = 0;
-
+            _bufferCircular = new Orden[Capacidad];
+            
         }
 
         public Orden DepositarDato(Orden orden)

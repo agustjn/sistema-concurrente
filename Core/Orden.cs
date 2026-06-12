@@ -10,7 +10,7 @@ namespace SistemaConcurrente.Core
         public string Descripcion { get;  }
 
         // Valor generado random para luego simular el computo pesado
-        public decimal Monto { get; init; }
+        public double Monto { get; init; }
 
         
 

@@ -1,0 +1,9 @@
+﻿namespace SistemaConcurrente.Core.Cache
+{
+    public class Cache
+    {
+        public List<OrdenEstado> OrdenEstados { get; } = new();
+        public Cache() { }
+
+    }
+}
