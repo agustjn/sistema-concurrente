@@ -2,9 +2,10 @@
 {
     public record ConfiguracionRun
     {
-        public int CapacidadBuffer { get; }
-        public int CantConsumidores { get; }
-        public int CantProductores { get; }
-
+        public int CapacidadBuffer { get; set; }
+        public int CantOrdenes { get; set; }
+        public int CantConsumidores { get; set; }
+        public int CantProductores { get; set; }
+        public int CantIteraciones { get; set; }
     }
 }

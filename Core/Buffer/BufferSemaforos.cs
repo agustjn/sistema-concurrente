@@ -59,6 +59,8 @@ namespace SistemaConcurrente.Core.Buffer
             orden.RetiradoDeBufferEn = DateTime.Now;
             Ocupado = (Ocupado + 1) % Capacidad;
             _mutexRetirar.Release();
+            _vacio.Release();
+
             return orden;
         }
 

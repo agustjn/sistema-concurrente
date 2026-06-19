@@ -3,24 +3,24 @@
     public record ApisResponse
     {
         
-            public required int RunId { get; init; }
-            public required string Tecnica { get; init; }
-            //public required ConfiguracionRun Configuracion { get; init; }
-            public required int OrdenesProcesadas { get; init; }
-            public required double TiempoTotalSegundos { get; init; }
-            public required double ThroughputOrdenesPorSegundo { get; init; }
+        public int RunId { get; set; }
+        public string Tecnica { get; set; }
+        //public required ConfiguracionRun Configuracion { get; init; }
+        public int OrdenesProcesadas { get; set; }
+        public double TiempoTotalSegundos { get; set; }
+        public double ThroughputOrdenesPorSegundo { get; set; }
 
-            // Latencia extremo a extremo: PutAt → CompletedAt
-            public required double LatenciaPromedioMs { get; init; }
-            public required double LatenciaMinimaMs { get; init; }
-            public required double LatenciaMaximaMs { get; init; }
-            public required double LatenciaP95Ms { get; init; }
+        // Latencia extremo a extremo: PutAt → CompletedAt
+        public double LatenciaPromedioMs { get; set; }
+        public double LatenciaMinimaMs { get; set; }
+        public double LatenciaMaximaMs { get; set; }
+        public double LatenciaP95Ms { get; set; }
 
-            // Tiempo de espera en buffer: PutAt → TakeAt (null para secuencial)
-            public required double? EsperaEnBufferPromedioMs { get; init; }
+        // Tiempo de espera en buffer: PutAt → TakeAt (null para secuencial)
+        public double? EsperaEnBufferPromedioMs { get; set; }
 
-            // Tiempo de procesamiento del consumidor: TakeAt → CompletedAt
-            public required double TiempoProcesamientoPromedioMs { get; init; }
-        
+        // Tiempo de procesamiento del consumidor: TakeAt → CompletedAt
+        public double TiempoProcesamientoPromedioMs { get; set; }
+
     }
 }

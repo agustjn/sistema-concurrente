@@ -1,4 +1,4 @@
-﻿namespace SistemaConcurrente.Core
+﻿namespace SistemaConcurrente.Core.Cache
 {
     public enum PoliticasCache
     {

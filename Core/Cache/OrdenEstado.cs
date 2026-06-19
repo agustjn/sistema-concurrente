@@ -1,6 +1,6 @@
 ﻿namespace SistemaConcurrente.Core.Cache
 {
-    public class OrdenEstado
+    public class Cache : ICache
     {
         public enum Estado { Generada, EnProceso, Finalizada }
 

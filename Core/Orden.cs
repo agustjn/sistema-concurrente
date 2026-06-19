@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using SistemaConcurrente.Core.Cache;
+using System.Drawing;
 
 namespace SistemaConcurrente.Core
 {
@@ -12,8 +13,6 @@ namespace SistemaConcurrente.Core
         // Valor generado random para luego simular el computo pesado
         public double Monto { get; init; }
 
-        
-
         // Resultado del procesamiento numérico simulado
 
         public double? ValorCalculado { get; set; }
@@ -21,8 +20,6 @@ namespace SistemaConcurrente.Core
         // Momento en el que el productor genero la orden.
         public DateTime CreadoEn { get; }
 
-        // Momento en el que el productor la genero
-        //public DateTime? GeneradaEn { get; init; }
 
         // Momento en el que el productor genero y inserto en el buffer (accediendo al recurso compartido)
         public DateTime? InsertadoEnBufferEn { get; set; }
@@ -40,12 +37,22 @@ namespace SistemaConcurrente.Core
         public PoliticasCache TecnicaCache { get; set; }
         public string TecnicaBuffer { get; set; }
 
+        // El bool y el metodo estatico se utilizan para poder cortar los threads en los semaforos que quedan en _lleno.Wait(), los cuales una vez finalizadas toads las ordenes,
+        // los productores generaran estan "Ordenes veneno" para poder finalizar los procesos consumidores.
+        public bool esFin { get; init; }
+        public static Orden PoisonPill() => new Orden(-1, "finEjecucion") { esFin = true };
+
         public Orden(int id, string estrategiaBuffer)
         {
             Id = id;
             TecnicaBuffer = estrategiaBuffer;
             Monto = Random.Shared.Next(1, 60001);
             CreadoEn = DateTime.Now;
+        }
+
+        public void calcularLatencia()
+        {
+            this.LatenciaMs = (CompletadoEn.Value - CreadoEn).TotalMilliseconds;
         }
 
 

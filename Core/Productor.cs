@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
 using SistemaConcurrente.Core.Buffer;
+using SistemaConcurrente.Core.Coordinadores;
 using System.Security.Cryptography;
 
 namespace SistemaConcurrente.Core
@@ -13,21 +14,26 @@ namespace SistemaConcurrente.Core
 
         public int CantIteraciones { get; }
 
+        private ContadorOrdenes _contadorOrdenes;
 
-        public Productor(int id,string name, IBuffer buffer, int cantIteraciones)
+
+        public Productor(int id,string name, IBuffer buffer, int cantIteraciones, ContadorOrdenes contadorOrdenes)
         {
             
             Id = id;
             Name = name;
             _buffer = buffer;
             CantIteraciones = cantIteraciones;
+            _contadorOrdenes = contadorOrdenes;
+            
         }
 
         public void GenerarOrdenes()
         {
             while (true) {
+                if (!_contadorOrdenes.DescontarOrden()) 
+                    { break; }                   
                 Random rand = new Random();
-
                 Orden orden = new Orden(rand.Next(1,100000), _buffer.EstrategiaBuffer);
                 var resultado = this.SimularProcesamiento(orden.Monto);
                 orden.ValorCalculado = resultado;

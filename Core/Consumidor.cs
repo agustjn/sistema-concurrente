@@ -1,4 +1,6 @@
-﻿using SistemaConcurrente.Core.Buffer;
+using SistemaConcurrente.Core.Buffer;
+using SistemaConcurrente.Core.Cache;
+using System.Collections.Concurrent;
 
 namespace SistemaConcurrente.Core
 {
@@ -8,30 +10,42 @@ namespace SistemaConcurrente.Core
         public string Name { get; set; }
 
         private readonly IBuffer _buffer;
+        private readonly ICache _cache;
 
         public int CantIteraciones { get; }
 
+        // Bolsa compartida (misma instancia para todos los consumidores) donde se acumulan las
+        // ordenes reales completadas, para luego calcular las metricas.
+        private readonly ConcurrentBag<Orden> _ordenesCompletadas;
 
-        public Consumidor(int id,string name, IBuffer buffer, int cantIteraciones)
+
+        public Consumidor(int id,string name, IBuffer buffer, int cantIteraciones, ConcurrentBag<Orden> ordenesCompletadas, ICache cache)
         {
-            
+
             Id = id;
             Name = name;
             _buffer = buffer;
             CantIteraciones = cantIteraciones;
+            _ordenesCompletadas = ordenesCompletadas;
+            _cache = cache;
         }
 
         public void ProcesarOrden()
         {
-            while (true) 
+            while (true)
             {
                 Orden orden = _buffer.RetirarDato();
+                if (orden.esFin) { break; }
                 orden.ValorCalculado = this.SimularProcesamiento(orden.Monto);
                 orden.CompletadoEn = DateTime.Now;
+                orden.calcularLatencia();
+
+                _ordenesCompletadas.Add(orden);
+                Console.WriteLine("Orden #" + orden.Id + " completada / Consumidor #" + Id.ToString());
                 // actualizar cache
-               
+
             }
-            
+
         }
 
         private double SimularProcesamiento(double monto)

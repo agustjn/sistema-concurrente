@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SistemaConcurrente.Core.Coordinadores;
 using SistemaConcurrente.DTOs;
-using System.Net.Http.Headers;
+using SistemaConcurrente.Utils;
 
 namespace SistemaConcurrente.Controllers
 {
@@ -9,19 +9,23 @@ namespace SistemaConcurrente.Controllers
     [Route("[controller]")]
     public class ApisConcurrentes : ControllerBase
     {
-        
-
-        //private readonly ILogger<WeatherForecastController> _logger;
+        // Identificador incremental de corrida (atomico para soportar requests concurrentes).
+        private static int _runIdSeed = 0;
 
         public ApisConcurrentes()
         {
-            
+
         }
 
         [HttpPost("semaforos-cache-justa")]
-        public Task<ApisResponse> SemaforosCacheJusta([FromBody] ConfiguracionRun parametros)
+        public async Task<ApisResponse> SemaforosCacheJusta([FromBody] ConfiguracionRun parametros)
         {
-            
+            ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CapacidadBuffer, parametros.CantIteraciones, parametros.CantOrdenes);
+
+            ResultadoEjecucion resultado = await service.EjecutarSemaforos();
+
+            int runId = Interlocked.Increment(ref _runIdSeed);
+            return CalculadoraMetricas.Calcular(resultado.Ordenes, resultado.TiempoTotalSegundos, runId, "SemaforosJusta");
         }
     }
 }
