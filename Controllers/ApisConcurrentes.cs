@@ -20,12 +20,11 @@ namespace SistemaConcurrente.Controllers
         [HttpPost("semaforos-cache-justa")]
         public async Task<ApisResponse> SemaforosCacheJusta([FromBody] ConfiguracionRun parametros)
         {
-            ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CapacidadBuffer, parametros.CantIteraciones, parametros.CantOrdenes);
+            ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CapacidadBuffer, parametros.CantIteraciones, parametros.CantOrdenes, parametros.CantLectores);
 
             ResultadoEjecucion resultado = await service.EjecutarSemaforos();
 
-            int runId = Interlocked.Increment(ref _runIdSeed);
-            return CalculadoraMetricas.Calcular(resultado.Ordenes, resultado.TiempoTotalSegundos, runId, "SemaforosJusta");
+            return CalculadoraMetricas.Calcular(resultado.Ordenes, resultado.TiempoTotalSegundos, "SemaforosJusta");
         }
     }
 }

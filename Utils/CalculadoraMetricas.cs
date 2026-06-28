@@ -7,7 +7,7 @@ namespace SistemaConcurrente.Utils
     // Toma las ordenes reales completadas de una corrida y arma el ApisResponse (el JSON de metricas).
     public static class CalculadoraMetricas
     {
-        public static ApisResponse Calcular(IReadOnlyList<Orden> ordenes, double tiempoTotalSeg, int runId, string tecnica)
+        public static ApisResponse Calcular(IReadOnlyList<Orden> ordenes, double tiempoTotalSeg, string tecnica)
         {
             int n = ordenes.Count;
 

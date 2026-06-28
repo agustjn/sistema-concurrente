@@ -36,14 +36,19 @@ namespace SistemaConcurrente.Core
             {
                 Orden orden = _buffer.RetirarDato();
                 if (orden.esFin) { break; }
+
+                // ESCRITURA en cache: la orden pasa a "EnProceso" apenas la tomo del buffer.
+                _cache.Escribir(orden.Id, EstadoOrden.EnProceso);
+
                 orden.ValorCalculado = this.SimularProcesamiento(orden.Monto);
                 orden.CompletadoEn = DateTime.Now;
                 orden.calcularLatencia();
 
                 _ordenesCompletadas.Add(orden);
-                Console.WriteLine("Orden #" + orden.Id + " completada / Consumidor #" + Id.ToString());
-                // actualizar cache
 
+                // ESCRITURA en cache: termine de procesar -> "Finalizada".
+                _cache.Escribir(orden.Id, EstadoOrden.Finalizada);
+                Console.WriteLine("Orden #" + orden.Id + " completada / Consumidor #" + Id.ToString());
             }
 
         }

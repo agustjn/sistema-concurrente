@@ -61,4 +61,3 @@ C:\Users\Pcstore\Desktop\Proyectos\sistema-concurrente\bin\Debug\net8.0\Swashbuc
 C:\Users\Pcstore\Desktop\Proyectos\sistema-concurrente\obj\Debug\net8.0\SistemaConcurrente.csproj.AssemblyReference.cache
 C:\Users\Pcstore\Desktop\Proyectos\sistema-concurrente\obj\Debug\net8.0\SistemaConcurrente.MvcApplicationPartsAssemblyInfo.cs
 C:\Users\Pcstore\Desktop\Proyectos\sistema-concurrente\obj\Debug\net8.0\SistemaC.C47686CC.Up2Date
-C:\Users\Pcstore\Desktop\Proyectos\sistema-concurrente\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
