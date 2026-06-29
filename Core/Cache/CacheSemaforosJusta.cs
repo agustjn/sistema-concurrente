@@ -1,4 +1,4 @@
-namespace SistemaConcurrente.Core.Cache
+ .01namespace SistemaConcurrente.Core.Cache
 {
     // ============================================================================================
     //  Cache de estados de ordenes resuelta como problema de LECTORES / ESCRITORES,

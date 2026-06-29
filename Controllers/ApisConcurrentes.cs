@@ -9,8 +9,7 @@ namespace SistemaConcurrente.Controllers
     [Route("[controller]")]
     public class ApisConcurrentes : ControllerBase
     {
-        // Identificador incremental de corrida (atomico para soportar requests concurrentes).
-        private static int _runIdSeed = 0;
+        
 
         public ApisConcurrentes()
         {
@@ -26,5 +25,7 @@ namespace SistemaConcurrente.Controllers
 
             return CalculadoraMetricas.Calcular(resultado.Ordenes, resultado.TiempoTotalSegundos, "SemaforosJusta");
         }
+
+
     }
 }
