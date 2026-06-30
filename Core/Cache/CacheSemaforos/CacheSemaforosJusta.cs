@@ -1,49 +1,27 @@
- .01namespace SistemaConcurrente.Core.Cache
+namespace SistemaConcurrente.Core.Cache.CacheSemaforos
 {
-    // ============================================================================================
-    //  Cache de estados de ordenes resuelta como problema de LECTORES / ESCRITORES,
-    //  usando SEMAFOROS con la tecnica "PASSING THE BATON" (pasaje de testigo).
-    //
-    //  Politica: JUSTA (fair). Ni los lectores ni los escritores sufren inanicion:
-    //    - Un escritor que llega y encuentra lectores leyendo queda demorado, pero los
-    //      lectores que lleguen DESPUES tambien se demoran (ceden ante el escritor que espera).
-    //      Asi el escritor entra apenas terminan los lectores que ya estaban adentro.
-    //    - Un lector que llega y encuentra escritores (activos o esperando) se demora,
-    //      pero en cuanto se vacian los escritores se libera en cascada a todos los lectores.
-    //
-    //  Reglas del acceso:
-    //    - Varios LECTORES pueden leer a la vez (no se pisan entre si).
-    //    - Un ESCRITOR necesita acceso EXCLUSIVO (ni lectores ni otros escritores en simultaneo).
-    //
-    //  Idea de "passing the baton": existe un unico "testigo" (el permiso para tocar los
-    //  contadores de sincronizacion). Quien tiene el testigo, al terminar su tramo, en vez de
-    //  liberar la entrada se lo PASA directamente a un proceso demorado que ya puede avanzar
-    //  (haciendo Release de su cola). El que despierta hereda el testigo: NO vuelve a pedir la
-    //  entrada. Si nadie puede avanzar, recien ahi se libera la entrada.
-    // ============================================================================================
+
     public class CacheSemaforosJusta : ICache
     {
-        // ----- Datos protegidos: el estado de cada orden (id -> estado) -----
+        
         private readonly Dictionary<int, EstadoOrden> _estados = new();
 
-        // ----- Contadores de sincronizacion (solo se tocan teniendo el testigo "_entrada") -----
         private int lectoresActivos = 0;       // (nr) lectores leyendo ahora mismo
         private int escritoresActivos = 0;     // (nw) escritores escribiendo ahora mismo (0 o 1)
         private int lectoresDemorados = 0;     // (dr) lectores dormidos esperando su turno
         private int escritoresDemorados = 0;   // (dw) escritores dormidos esperando su turno
 
-        // ----- Semaforos -----
-        // Testigo / entrada a la region de sincronizacion. Funciona como mutex sobre los contadores.
+        // Testigo. Funciona como mutex sobre los contadores.
         private readonly SemaphoreSlim _entrada = new SemaphoreSlim(1, 1);
-        // Cola donde se duermen los lectores demorados (semaforo de senalizacion, arranca en 0).
+        // Cola donde se duermen los lectores demorados (arranca en 0).
         private readonly SemaphoreSlim _colaLectores = new SemaphoreSlim(0, int.MaxValue);
-        // Cola donde se duermen los escritores demorados (semaforo de senalizacion, arranca en 0).
+        // Cola donde se duermen los escritores demorados (arranca en 0).
         private readonly SemaphoreSlim _colaEscritores = new SemaphoreSlim(0, int.MaxValue);
 
-        // ------------------------------------------------------------------------------------
-        //  SIGNAL (pasar el testigo).
+
+        //  SIGNAL
         //  Lo invoca quien tiene el testigo cuando termina de tocar los contadores. Decide a
-        //  quien pasarselo. Se evalua EXACTAMENTE una rama (passing the baton pasa el testigo a
+        //  quien pasarselo. Se evalua EXACTAMENTE una rama (passing the baton pasa el baton a
         //  UN solo proceso):
         //
         //    1) Si pueden leer (no hay escritor activo NI escritores esperando) y hay lectores
@@ -57,7 +35,7 @@
         //  "escritoresDemorados == 0", de modo que mientras haya un escritor esperando NO se
         //  habilitan lectores nuevos, evitando que los escritores mueran de hambre.
         // ------------------------------------------------------------------------------------
-        private void PasarElTestigo()
+        private void Signal()
         {
             if (escritoresActivos == 0 && escritoresDemorados == 0 && lectoresDemorados > 0)
             {
@@ -91,7 +69,7 @@
             escritoresActivos++;
             // Con un escritor activo nadie mas puede entrar: este SIGNAL terminara liberando la
             // entrada (no hay a quien pasarle el testigo todavia).
-            PasarElTestigo();
+            Signal();
 
             // ---------- seccion critica de escritura (EXCLUSIVA) ----------
             _estados[ordenId] = estado;
@@ -99,21 +77,14 @@
 
             _entrada.Wait();                                  // P(e): retomo el testigo para salir
             escritoresActivos--;
-            PasarElTestigo();                                 // paso el testigo al proximo (lector o escritor)
+            Signal();                                 // paso el testigo al proximo (lector o escritor)
         }
 
-        // ------------------------------------------------------------------------------------
-        //  LECTOR: consulta el estado de una orden. Varios lectores conviven en paralelo.
-        // ------------------------------------------------------------------------------------
         public EstadoOrden? Leer(int ordenId)
         {
             EntrarComoLector();
 
-            // ---------- seccion de lectura (CONCURRENTE entre lectores) ----------
-            EstadoOrden? resultado = _estados.TryGetValue(ordenId, out var estado)
-                ? estado
-                : (EstadoOrden?)null;
-            // ---------------------------------------------------------------------
+            EstadoOrden? resultado = _estados[ordenId];
 
             SalirComoLector();
             return resultado;
@@ -159,7 +130,7 @@
             lectoresActivos++;
             // Cascada: si quedan mas lectores demorados (y se puede leer), los voy despertando uno
             // a uno; cada uno repite este SIGNAL hasta vaciar la cola de lectores.
-            PasarElTestigo();
+            Signal();
         }
 
         // ------------------------------------------------------------------------------------
@@ -170,7 +141,7 @@
             _entrada.Wait();                                  // P(e): retomo el testigo para salir
             lectoresActivos--;
             // Si fui el ultimo lector, el SIGNAL podra habilitar a un escritor demorado.
-            PasarElTestigo();
+            Signal();
         }
     }
 }

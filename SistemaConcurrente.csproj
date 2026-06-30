@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Folder Include="Core\Cache\CacheMonitores\" />
     <Folder Include="Core\Semaforos\" />
   </ItemGroup>
 
