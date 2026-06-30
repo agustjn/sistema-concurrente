@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SistemaConcurrente")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e17337a8f3a0f9075360f43330c495eda033f052")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a6ff32a94ac8fa2207f3cde7095d37ff8db03752")]
 [assembly: System.Reflection.AssemblyProductAttribute("SistemaConcurrente")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SistemaConcurrente")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

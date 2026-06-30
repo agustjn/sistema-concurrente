@@ -3,6 +3,14 @@
   "WorkspaceRootPath": "C:\\Users\\Pcstore\\Desktop\\Proyectos\\sistema-concurrente\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{84314468-58C7-4E45-BD2C-C1D2BA80081B}|SistemaConcurrente.csproj|c:\\users\\pcstore\\desktop\\proyectos\\sistema-concurrente\\core\\cache\\cachesemaforoslectores.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{84314468-58C7-4E45-BD2C-C1D2BA80081B}|SistemaConcurrente.csproj|solutionrelative:core\\cache\\cachesemaforoslectores.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{84314468-58C7-4E45-BD2C-C1D2BA80081B}|SistemaConcurrente.csproj|c:\\users\\pcstore\\desktop\\proyectos\\sistema-concurrente\\core\\cache\\cachesemaforosjusta.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{84314468-58C7-4E45-BD2C-C1D2BA80081B}|SistemaConcurrente.csproj|solutionrelative:core\\cache\\cachesemaforosjusta.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{84314468-58C7-4E45-BD2C-C1D2BA80081B}|SistemaConcurrente.csproj|c:\\users\\pcstore\\desktop\\proyectos\\sistema-concurrente\\controllers\\apisconcurrentes.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{84314468-58C7-4E45-BD2C-C1D2BA80081B}|SistemaConcurrente.csproj|solutionrelative:controllers\\apisconcurrentes.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -34,10 +42,6 @@
           "Children": [
             {
               "$type": "Bookmark",
-              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
-            },
-            {
-              "$type": "Bookmark",
               "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
             },
             {
@@ -50,20 +54,46 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "CacheSemaforosJusta.cs",
+              "DocumentMoniker": "C:\\Users\\Pcstore\\Desktop\\Proyectos\\sistema-concurrente\\Core\\Cache\\CacheSemaforosJusta.cs",
+              "RelativeDocumentMoniker": "Core\\Cache\\CacheSemaforosJusta.cs",
+              "ToolTip": "C:\\Users\\Pcstore\\Desktop\\Proyectos\\sistema-concurrente\\Core\\Cache\\CacheSemaforosJusta.cs",
+              "RelativeToolTip": "Core\\Cache\\CacheSemaforosJusta.cs",
+              "ViewState": "AgIAACYAAAAAAAAAAAAQwBoAAABCAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-29T19:46:50.952Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "CacheSemaforosLectores.cs",
+              "DocumentMoniker": "C:\\Users\\Pcstore\\Desktop\\Proyectos\\sistema-concurrente\\Core\\Cache\\CacheSemaforosLectores.cs",
+              "RelativeDocumentMoniker": "Core\\Cache\\CacheSemaforosLectores.cs",
+              "ToolTip": "C:\\Users\\Pcstore\\Desktop\\Proyectos\\sistema-concurrente\\Core\\Cache\\CacheSemaforosLectores.cs",
+              "RelativeToolTip": "Core\\Cache\\CacheSemaforosLectores.cs",
+              "ViewState": "AgIAAAIAAAAAAAAAAAAxwBYAAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-29T19:35:09.914Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
               "Title": "ApisConcurrentes.cs",
               "DocumentMoniker": "C:\\Users\\Pcstore\\Desktop\\Proyectos\\sistema-concurrente\\Controllers\\ApisConcurrentes.cs",
               "RelativeDocumentMoniker": "Controllers\\ApisConcurrentes.cs",
               "ToolTip": "C:\\Users\\Pcstore\\Desktop\\Proyectos\\sistema-concurrente\\Controllers\\ApisConcurrentes.cs",
               "RelativeToolTip": "Controllers\\ApisConcurrentes.cs",
-              "ViewState": "AgIAAAcAAAAAAAAAAAAAABgAAABNAAAAAAAAAA==",
+              "ViewState": "AgIAAAcAAAAAAAAAAAAAABgAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-06-18T23:19:30.283Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "ConfigurationRunService.cs",
               "DocumentMoniker": "C:\\Users\\Pcstore\\Desktop\\Proyectos\\sistema-concurrente\\Core\\Coordinadores\\ConfigurationRunService.cs",
               "RelativeDocumentMoniker": "Core\\Coordinadores\\ConfigurationRunService.cs",
@@ -71,12 +101,11 @@
               "RelativeToolTip": "Core\\Coordinadores\\ConfigurationRunService.cs",
               "ViewState": "AgIAAB4AAAAAAAAAAAAUwDkAAAApAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-18T23:16:50.789Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-18T23:16:50.789Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 4,
               "Title": "CalculadoraMetricas.cs",
               "DocumentMoniker": "C:\\Users\\Pcstore\\Desktop\\Proyectos\\sistema-concurrente\\Utils\\CalculadoraMetricas.cs",
               "RelativeDocumentMoniker": "Utils\\CalculadoraMetricas.cs",
@@ -84,12 +113,11 @@
               "RelativeToolTip": "Utils\\CalculadoraMetricas.cs",
               "ViewState": "AgIAABQAAAAAAAAAAAAgwD4AAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-18T23:10:11.316Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-18T23:10:11.316Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 5,
               "Title": "ResultadoEjecucion.cs",
               "DocumentMoniker": "C:\\Users\\Pcstore\\Desktop\\Proyectos\\sistema-concurrente\\Core\\Coordinadores\\ResultadoEjecucion.cs",
               "RelativeDocumentMoniker": "Core\\Coordinadores\\ResultadoEjecucion.cs",
@@ -97,12 +125,11 @@
               "RelativeToolTip": "Core\\Coordinadores\\ResultadoEjecucion.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAASAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-18T23:03:07.887Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-18T23:03:07.887Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 6,
               "Title": "ApisResponse.cs",
               "DocumentMoniker": "C:\\Users\\Pcstore\\Desktop\\Proyectos\\sistema-concurrente\\DTOs\\ApisResponse.cs",
               "RelativeDocumentMoniker": "DTOs\\ApisResponse.cs",
@@ -110,8 +137,7 @@
               "RelativeToolTip": "DTOs\\ApisResponse.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAArAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-18T22:49:04.396Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-18T22:49:04.396Z"
             }
           ]
         },
