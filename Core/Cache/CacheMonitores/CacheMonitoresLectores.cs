@@ -8,29 +8,30 @@
         // recursos protegidos por el monitor
         private int escritoresActivos = 0;
         private int lectoresActivos = 0;
-        private int escritoresDormidos = 0;
-        private int lectoresDormidos = 0;
 
         public void Escribir(int ordenId, EstadoOrden estado)
+        {
+            this.PedidoEscribir();
+            _estados[ordenId] = estado;
+            this.LiberaEscribir();
+        }
+
+        public EstadoOrden? Leer(int ordenId)
+        {
+            this.PedidoLeer();
+            var estado = _estados[ordenId];
+            this.LiberaLeer();
+            return estado;
+        }
+
+        private void PedidoEscribir()
         {
             lock (_monitor)
             {
                 while (escritoresActivos > 0 || lectoresActivos > 0)
                     Monitor.Wait(_monitor);
-                _estados[ordenId] = estado;
-                Monitor.PulseAll(_monitor);
-            }
-        }
 
-        public EstadoOrden? Leer(int ordenId)
-        {
-            lock (_monitor)
-            {
-                while (escritoresActivos > 0)
-                    Monitor.Wait(_monitor);
-                var estado = _estados[ordenId];
-                Monitor.PulseAll(_monitor);
-                return estado;
+                
             }
         }
 
