@@ -45,6 +45,8 @@ _ReSharper*/
 !**/[Pp]ackages/build/
 *.nuget.props
 *.nuget.targets
+.vs/
+obj/
 
 ## MSTest test results
 [Tt]est[Rr]esult*/

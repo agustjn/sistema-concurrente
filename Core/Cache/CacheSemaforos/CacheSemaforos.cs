@@ -1,13 +1,13 @@
 ﻿namespace SistemaConcurrente.Core.Cache.CacheSemaforos
 {
-    public class CacheSemaforosLectores : ICache
+    public class CacheSemaforos : ICache
     {
+        private readonly Dictionary<int, EstadoOrden> _estados = new();
 
         private readonly SemaphoreSlim _colaLectores = new SemaphoreSlim(1, int.MaxValue);
         private int _lectoresActivos = 0;
         private readonly SemaphoreSlim _colaEscritores = new SemaphoreSlim(1, 1);
         private readonly SemaphoreSlim _mutex = new SemaphoreSlim(1, 1);
-        private readonly Dictionary<int, EstadoOrden> _estados = new();
 
 
         public void Escribir(int ordenId, EstadoOrden estado)
