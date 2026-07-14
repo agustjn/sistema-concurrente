@@ -20,7 +20,6 @@ D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\obj\Debug\net8.0\staticwebass
 D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\obj\Debug\net8.0\staticwebassets.build.json.cache
 D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\obj\Debug\net8.0\staticwebassets.development.json
 D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\obj\Debug\net8.0\staticwebassets.build.endpoints.json
-D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
 D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\obj\Debug\net8.0\SistemaConcurrente.dll
 D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\obj\Debug\net8.0\refint\SistemaConcurrente.dll
 D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\obj\Debug\net8.0\SistemaConcurrente.pdb
@@ -61,3 +60,11 @@ C:\Users\Pcstore\Desktop\Proyectos\sistema-concurrente\bin\Debug\net8.0\Swashbuc
 C:\Users\Pcstore\Desktop\Proyectos\sistema-concurrente\obj\Debug\net8.0\SistemaConcurrente.csproj.AssemblyReference.cache
 C:\Users\Pcstore\Desktop\Proyectos\sistema-concurrente\obj\Debug\net8.0\SistemaConcurrente.MvcApplicationPartsAssemblyInfo.cs
 C:\Users\Pcstore\Desktop\Proyectos\sistema-concurrente\obj\Debug\net8.0\SistemaC.C47686CC.Up2Date
+D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\obj\Debug\net8.0\SistemaConcurrente.csproj.AssemblyReference.cache
+D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\obj\Debug\net8.0\SistemaConcurrente.MvcApplicationPartsAssemblyInfo.cs
+D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\obj\Debug\net8.0\SistemaConcurrente.sourcelink.json
+D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\bin\Debug\net8.0\Microsoft.OpenApi.dll
+D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\bin\Debug\net8.0\Swashbuckle.AspNetCore.Swagger.dll
+D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerUI.dll
+D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\obj\Debug\net8.0\SistemaC.C47686CC.Up2Date
