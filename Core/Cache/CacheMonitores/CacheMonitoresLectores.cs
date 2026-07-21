@@ -48,15 +48,12 @@ namespace SistemaConcurrente.Core.Cache.CacheMonitores
             // TryGetValue y no _estados[ordenId]: el contrato de ICache dice que si la orden
             // todavia no fue registrada se devuelve null, no que explote con KeyNotFoundException.
             EstadoOrden? estado = _estados.TryGetValue(ordenId, out var encontrado) ? encontrado : null;
-            // ---------------------------------------------------------------------
 
             this.LiberaLeer();
             return estado;
         }
 
-        // ------------------------------------------------------------------------------------
         //  LECTOR: resumen (conteo por estado) de toda la cache. Misma sincronizacion de lector.
-        // ------------------------------------------------------------------------------------
         public ResumenCache LeerResumen()
         {
             this.PedidoLeer();
@@ -78,9 +75,8 @@ namespace SistemaConcurrente.Core.Cache.CacheMonitores
             return new ResumenCache(generadas, enProceso, finalizadas);
         }
 
-        // ------------------------------------------------------------------------------------
+        
         //  Protocolo de ENTRADA de un escritor: espera a que no quede NADIE usando la cache.
-        // ------------------------------------------------------------------------------------
         private void PedidoEscribir()
         {
             lock (_monitor)
@@ -94,28 +90,19 @@ namespace SistemaConcurrente.Core.Cache.CacheMonitores
             }
         }
 
-        // ------------------------------------------------------------------------------------
         //  Protocolo de SALIDA de un escritor.
-        // ------------------------------------------------------------------------------------
         private void LiberaEscribir()
         {
             lock (_monitor)
             {
                 escritoresActivos--;
-                // PulseAll y no Pulse: los que esperan no son todos equivalentes (hay lectores y
-                // escritores con condiciones distintas sobre el MISMO monitor). Con Pulse podria
-                // despertar justo a un escritor que no puede avanzar y dejar dormidos a lectores
-                // que si podian, perdiendo la senial. Con signal-and-continue el costo de PulseAll
-                // es que todos reevaluan su while y los que no pueden se vuelven a dormir.
                 Monitor.PulseAll(_monitor);
             }
         }
 
-        // ------------------------------------------------------------------------------------
-        //  Protocolo de ENTRADA de un lector (compartido por Leer y LeerResumen).
+        
         //  PREFERENCIA A LECTORES: solo miro escritoresActivos. No me importa si hay escritores
         //  esperando, les paso por arriba. De ahi sale la posible inanicion de escritores.
-        // ------------------------------------------------------------------------------------
         private void PedidoLeer()
         {
             lock (_monitor)
@@ -127,16 +114,14 @@ namespace SistemaConcurrente.Core.Cache.CacheMonitores
             }
         }
 
-        // ------------------------------------------------------------------------------------
         //  Protocolo de SALIDA de un lector.
-        // ------------------------------------------------------------------------------------
         private void LiberaLeer()
         {
             lock (_monitor)
             {
                 lectoresActivos--;
                 // Solo tiene sentido avisar si fui el ULTIMO lector: recien ahi un escritor demorado
-                // puede llegar a pasar su while.
+                // puede llegar a pasar su while
                 if (lectoresActivos == 0)
                     Monitor.PulseAll(_monitor);
             }

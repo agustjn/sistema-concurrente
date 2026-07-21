@@ -18,7 +18,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 247,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Bookmark",
@@ -38,27 +38,28 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "CacheMonitoresLectores.cs",
+              "DocumentMoniker": "D:\\Usuario\\Escritorio\\Proyectos\\SistemaConcurrente\\Core\\Cache\\CacheMonitores\\CacheMonitoresLectores.cs",
+              "RelativeDocumentMoniker": "Core\\Cache\\CacheMonitores\\CacheMonitoresLectores.cs",
+              "ToolTip": "D:\\Usuario\\Escritorio\\Proyectos\\SistemaConcurrente\\Core\\Cache\\CacheMonitores\\CacheMonitoresLectores.cs*",
+              "RelativeToolTip": "Core\\Cache\\CacheMonitores\\CacheMonitoresLectores.cs*",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-17T12:56:05.875Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 1,
               "Title": "CacheSemaforos.cs",
               "DocumentMoniker": "D:\\Usuario\\Escritorio\\Proyectos\\SistemaConcurrente\\Core\\Cache\\CacheSemaforos\\CacheSemaforos.cs",
               "RelativeDocumentMoniker": "Core\\Cache\\CacheSemaforos\\CacheSemaforos.cs",
               "ToolTip": "D:\\Usuario\\Escritorio\\Proyectos\\SistemaConcurrente\\Core\\Cache\\CacheSemaforos\\CacheSemaforos.cs",
               "RelativeToolTip": "Core\\Cache\\CacheSemaforos\\CacheSemaforos.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-02T14:17:51.889Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "CacheMonitoresLectores.cs",
-              "DocumentMoniker": "D:\\Usuario\\Escritorio\\Proyectos\\SistemaConcurrente\\Core\\Cache\\CacheMonitores\\CacheMonitoresLectores.cs",
-              "RelativeDocumentMoniker": "Core\\Cache\\CacheMonitores\\CacheMonitoresLectores.cs",
-              "ToolTip": "D:\\Usuario\\Escritorio\\Proyectos\\SistemaConcurrente\\Core\\Cache\\CacheMonitores\\CacheMonitoresLectores.cs",
-              "RelativeToolTip": "Core\\Cache\\CacheMonitores\\CacheMonitoresLectores.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAJAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-02T14:16:18.511Z",
+              "WhenOpened": "2026-07-17T12:56:02.771Z",
               "EditorCaption": ""
             }
           ]

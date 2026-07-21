@@ -21,7 +21,7 @@ namespace SistemaConcurrente.Core
         private ContadorOrdenes _contadorOrdenes;
 
         // Generador de Id compartido por TODOS los productores de la corrida. Es el que garantiza
-        // que cada orden tenga un Id unico (antes se usaba un random, que repetia).
+        // que cada orden tenga un Id unico
         private readonly GeneradorIdsOrden _generadorIds;
 
 
@@ -50,10 +50,7 @@ namespace SistemaConcurrente.Core
                 // ESCRITURA en cache: la orden queda registrada como "Generada".
                 _cache.Escribir(orden.Id, EstadoOrden.Generada);
                 _buffer.DepositarDato(orden);
-                // Comentado a proposito: la consola esta sincronizada internamente, asi que un print
-                // por orden serializa los hilos y termina midiendo la consola en vez de la
-                // sincronizacion. Con 10.000 ordenes distorsiona por completo los tiempos.
-                //Console.WriteLine("Depositada en el buffer orden #" + orden.Id + " / Productor #" + Id.ToString());
+                
             }
 
 
