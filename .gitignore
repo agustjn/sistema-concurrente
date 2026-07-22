@@ -1,4 +1,7 @@
 # .NET / Visual Studio gitignore
+.vs/*
+obj/*
+.vs/
 
 ## User-specific files
 *.rsuser

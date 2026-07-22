@@ -20,8 +20,12 @@ namespace SistemaConcurrente.Core
 
         private ContadorOrdenes _contadorOrdenes;
 
+        // Generador de Id compartido por TODOS los productores de la corrida. Es el que garantiza
+        // que cada orden tenga un Id unico
+        private readonly GeneradorIdsOrden _generadorIds;
 
-        public Productor(int id,string name, IBuffer buffer, int cantIteraciones, ContadorOrdenes contadorOrdenes, ICache cache)
+
+        public Productor(int id,string name, IBuffer buffer, int cantIteraciones, ContadorOrdenes contadorOrdenes, ICache cache, GeneradorIdsOrden generadorIds)
         {
 
             Id = id;
@@ -30,25 +34,26 @@ namespace SistemaConcurrente.Core
             CantIteraciones = cantIteraciones;
             _contadorOrdenes = contadorOrdenes;
             _cache = cache;
+            _generadorIds = generadorIds;
 
         }
 
         public void GenerarOrdenes()
         {
             while (true) {
-                if (!_contadorOrdenes.DescontarOrden()) 
-                    { break; }                   
-                Random rand = new Random();
-                Orden orden = new Orden(rand.Next(1,100000), _buffer.EstrategiaBuffer);
+                if (!_contadorOrdenes.DescontarOrden())
+                    { break; }
+                // El Id sale del generador atomico compartido: es unico en toda la corrida.
+                Orden orden = new Orden(_generadorIds.ProximoId(), _buffer.EstrategiaBuffer);
                 var resultado = this.SimularProcesamiento(orden.Monto);
                 orden.ValorCalculado = resultado;
                 // ESCRITURA en cache: la orden queda registrada como "Generada".
                 _cache.Escribir(orden.Id, EstadoOrden.Generada);
                 _buffer.DepositarDato(orden);
-                Console.WriteLine("Depositada en el buffer orden #" + orden.Id + " / Productor #" + Id.ToString());
+                
             }
 
-            
+
         }
 
         public double SimularProcesamiento(double monto)

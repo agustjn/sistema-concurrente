@@ -31,9 +31,12 @@ namespace SistemaConcurrente.Core
             while (!token.IsCancellationRequested)
             {
                 ResumenCache resumen = _cache.LeerResumen();   // operacion de LECTOR
-                Console.WriteLine(
-                    $"[Lector #{Id}] {resumen.Generadas} generadas / {resumen.EnProceso} en proceso / " +
-                    $"{resumen.Finalizadas} finalizadas (total {resumen.Total})");
+                // Comentado a proposito: el print esta dentro del tramo que se mide, y la consola
+                // serializa a todos los lectores entre si. La lectura de la cache se sigue haciendo
+                // igual (que es lo que interesa ejercitar del lado LECTOR).
+                //Console.WriteLine(
+                //    $"[Lector #{Id}] {resumen.Generadas} generadas / {resumen.EnProceso} en proceso / " +
+                //    $"{resumen.Finalizadas} finalizadas (total {resumen.Total})");
 
                 Thread.Sleep(_intervaloMs);   // espera entre lecturas: lectura "periodica"
             }

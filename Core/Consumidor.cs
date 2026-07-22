@@ -48,7 +48,9 @@ namespace SistemaConcurrente.Core
 
                 // ESCRITURA en cache: termine de procesar -> "Finalizada".
                 _cache.Escribir(orden.Id, EstadoOrden.Finalizada);
-                Console.WriteLine("Orden #" + orden.Id + " completada / Consumidor #" + Id.ToString());
+                // Comentado a proposito: un print por orden serializa los hilos (la consola tiene su
+                // propio lock interno) y arruina la medicion de performance.
+                //Console.WriteLine("Orden #" + orden.Id + " completada / Consumidor #" + Id.ToString());
             }
 
         }

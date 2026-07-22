@@ -1,5 +1,6 @@
 using SistemaConcurrente.Core.Buffer;
 using SistemaConcurrente.Core.Cache;
+using SistemaConcurrente.Core.Cache.CacheSemaforos;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 
@@ -20,6 +21,8 @@ namespace SistemaConcurrente.Core.Coordinadores
         private readonly ICache _cache;
         // Objeto utilizado para decrementar de manera atomica las ordenes, y luego asi poder cortar en los hilos productores
         private readonly ContadorOrdenes _contadorOrdenes;
+        // Objeto utilizado para repartir Id unicos entre todos los productores de la corrida
+        private readonly GeneradorIdsOrden _generadorIds;
         // Bolsa compartida donde los consumidores acumulan las ordenes reales completadas, para calcular metricas
         private readonly ConcurrentBag<Orden> _ordenesCompletadas = new();
 
@@ -34,6 +37,7 @@ namespace SistemaConcurrente.Core.Coordinadores
             Buffer = new BufferSemaforos(tamanioBuffer);
             _cache = new CacheSemaforosJusta();
             _contadorOrdenes = new ContadorOrdenes(totalOrdenes);
+            _generadorIds = new GeneradorIdsOrden();
         }
 
         public async Task<ResultadoEjecucion> EjecutarSemaforos()
@@ -80,8 +84,8 @@ namespace SistemaConcurrente.Core.Coordinadores
             {
                 Thread nuevoHilo = new Thread(() =>
                 {
-                    Productor productor = new Productor(i, "Prod #" + i.ToString(), Buffer, CantIteraciones, _contadorOrdenes, _cache);
-                    Console.Write(productor.ToString());
+                    Productor productor = new Productor(i, "Prod #" + i.ToString(), Buffer, CantIteraciones, _contadorOrdenes, _cache, _generadorIds);
+                    //Console.Write(productor.ToString());
                     productor.GenerarOrdenes();
                 });
 
@@ -101,7 +105,7 @@ namespace SistemaConcurrente.Core.Coordinadores
                 Thread nuevoHilo = new Thread(() =>
                 {
                     Consumidor consumidor = new Consumidor(i, "Consumidor #" + i.ToString(), Buffer, CantIteraciones, _ordenesCompletadas, _cache);
-                    Console.Write(consumidor.ToString());
+                    //Console.Write(consumidor.ToString());
                     consumidor.ProcesarOrden();
                 });
 

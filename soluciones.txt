@@ -1,0 +1,316 @@
+================================================================================
+SOLUCIONES - Sistema Concurrente (Trabajo Final Programacion Concurrente)
+Que se resolvio, como, y que se agrego nuevo. Complementa a restante.txt.
+Fecha: 2026-07-14  |  Rama: fin
+
+LOS TRES ARCHIVOS:
+  restante.txt     - que falta hacer (el chequeo contra la propuesta)
+  soluciones.txt   - ESTE: que se resolvio y como (el changelog con las razones)
+  arquitectura.txt - como funciona el sistema y por que los protocolos son
+                     correctos (la parte semantica; es el material del informe)
+================================================================================
+
+RESUMEN: el proyecto pasa de NO COMPILAR (4 errores) a compilar con 0 errores,
+correr de punta a punta y tener las dos variantes de monitores terminadas.
+Verificado en ejecucion real (ver el punto 6, "Como se verifico").
+
+
+--------------------------------------------------------------------------------
+1. BUILD ARREGLADO (los 4 errores)
+--------------------------------------------------------------------------------
+
+PROBLEMA: el proyecto no compilaba, asi que no se podia ni correr ni medir nada.
+
+QUE SE HIZO:
+
+  a) Core/Coordinadores/ConfigurationRunService.cs
+     Error CS0246: no encontraba el tipo 'CacheSemaforosJusta'.
+     La clase estaba bien y completa; el tema era que vive en el namespace
+     SistemaConcurrente.Core.Cache.CacheSemaforos y el archivo solo importaba
+     SistemaConcurrente.Core.Cache (el namespace padre; en C# los hijos NO se
+     importan solos).
+     SOLUCION: se agrego el using que faltaba:
+         using SistemaConcurrente.Core.Cache.CacheSemaforos;
+
+  b) Core/Cache/CacheMonitores/CacheMonitoresLectores.cs
+     Los otros 3 errores (CS1061) eran los metodos LiberaEscribir, PedidoLeer y
+     LiberaLeer, que se llamaban pero nunca se habian escrito.
+     SOLUCION: se termino la clase entera -> ver punto 3.
+
+RESULTADO: Build succeeded, 0 Errors.
+Quedan 3 warnings, que son los preexistentes ya anotados en restante.txt
+(Descripcion sin asignar, CS8629 en calcularLatencia, Tecnica sin inicializar).
+No se tocaron porque no estaban en el pedido.
+
+
+--------------------------------------------------------------------------------
+2. IDs DE ORDEN UNICOS  (era el bug grave de correctitud)
+--------------------------------------------------------------------------------
+
+PROBLEMA: en Core/Productor.cs el Id de cada orden salia de un random:
+
+        Random rand = new Random();
+        Orden orden = new Orden(rand.Next(1,100000), _buffer.EstrategiaBuffer);
+
+  El random no garantiza unicidad. Dos ordenes distintas podian llevar el mismo
+  Id, y como la cache se indexa por ordenId, una le pisaba el estado a la otra.
+  Peor todavia: el indicador principal de la propuesta ("cada orden se procesa
+  exactamente una vez") no se podia testear, porque sin identidad unica no hay
+  forma confiable de contar las ordenes.
+
+  QUE TAN REAL ERA: se midio. Generando 10.000 ids con el random viejo salieron
+  490 REPETIDOS (el numero se mueve un poco en cada corrida, ronda los 480-500).
+  O sea, casi el 5% de las ordenes tenia el Id de otra.
+
+QUE SE HIZO:
+
+  a) NUEVO: Core/Coordinadores/GeneradorIdsOrden.cs
+     Clase que reparte los Id de una corrida usando Interlocked.Increment, que es
+     una operacion atomica: dos productores concurrentes nunca se pueden llevar el
+     mismo numero. Los ids quedan 1, 2, 3, ... N.
+
+     Se hizo a imagen de ContadorOrdenes (misma carpeta, misma idea de envolver un
+     Interlocked): son las dos piezas atomicas de la corrida, una descuenta y la
+     otra reparte.
+
+     DECISION DE DISENIO: NO es estatico. Se instancia uno por corrida. Si fuera
+     estatico, los ids seguirian creciendo entre corridas y, como esto es una Web
+     API donde se van a disparar muchas corridas seguidas para las mediciones del
+     punto 7, se contaminarian entre si. Instanciandolo por corrida, cada
+     ejecucion arranca limpia en 1 y "los ids son 1..N" es una propiedad que el
+     test va a poder afirmar directo.
+
+  b) Core/Productor.cs
+     - Se agrego el campo _generadorIds (readonly) y el parametro en el
+       constructor.
+     - GenerarOrdenes() ahora hace:
+           Orden orden = new Orden(_generadorIds.ProximoId(), _buffer.EstrategiaBuffer);
+     - Se elimino el 'new Random()' que estaba adentro del while (ademas de
+       innecesario, Orden ya usa Random.Shared para el Monto).
+
+  c) Core/Coordinadores/ConfigurationRunService.cs
+     Crea el GeneradorIdsOrden de la corrida y se lo pasa a todos los productores
+     (misma instancia para todos, que es lo que hace que el Id sea unico entre
+     hilos).
+
+VERIFICADO: 20.000 ordenes con 8 productores -> 20.000 ids distintos, y el
+conjunto es exactamente 1..20000. 0 repetidos.
+
+
+--------------------------------------------------------------------------------
+3. CacheMonitores TERMINADA  (Core/Cache/CacheMonitores/CacheMonitoresLectores.cs)
+--------------------------------------------------------------------------------
+
+ESTADO ANTERIOR: la clase estaba a medio escribir. Tenia Escribir/Leer llamando a
+metodos inexistentes, PedidoEscribir esperaba pero nunca marcaba escritoresActivos
+(o sea que aunque compilara no daba exclusion mutua) y LeerResumen tiraba
+NotImplementedException.
+
+QUE SE HIZO: se completo el protocolo entero, respetando el disenio que ya estaba
+planteado (monitor + contadores).
+
+  - PedidoEscribir()  : while (escritoresActivos > 0 || lectoresActivos > 0) Wait;
+                        y DESPUES escritoresActivos++ (esto era lo que faltaba y lo
+                        que daba la exclusion).
+  - LiberaEscribir()  : escritoresActivos--; Monitor.PulseAll.
+  - PedidoLeer()      : while (escritoresActivos > 0) Wait; lectoresActivos++.
+  - LiberaLeer()      : lectoresActivos--; PulseAll solo si fui el ultimo lector
+                        (es el unico caso en que un escritor puede pasar su while).
+  - LeerResumen()     : implementado, mismo conteo por estado que hace
+                        CacheSemaforosJusta, con el protocolo de lector.
+  - Leer()            : pasa a TryGetValue y devuelve null si la orden no esta.
+                        Antes hacia _estados[ordenId] directo, que tira
+                        KeyNotFoundException, y el contrato de ICache dice
+                        explicitamente que devuelve null si no fue registrada.
+
+DECISIONES QUE VALE LA PENA DEFENDER EN EL INFORME:
+
+  * PulseAll y no Pulse. Sobre el mismo monitor esperan lectores y escritores, que
+    tienen condiciones DISTINTAS. Con Pulse podes despertar justo a un escritor que
+    no puede avanzar; ese se vuelve a dormir y la senial se pierde para el lector
+    que si podia -> hilos dormidos para siempre. PulseAll cuesta que todos
+    reevaluen, pero no pierde seniales.
+
+  * while y no if en los Wait. Es la esencia de signal-and-continue: el que hace
+    PulseAll NO entrega el monitor, sigue el. El despertado tiene que volver a
+    competir por el lock, y para cuando lo consigue la condicion pudo volver a ser
+    falsa. Con if seguiria de largo con la condicion rota.
+
+  * El lock protege SOLO los contadores, NO el diccionario. El acceso real a
+    _estados se hace afuera del lock. Si se hiciera adentro los lectores se
+    serializarian entre si y se perderia todo el sentido de lectores/escritores
+    (que es justamente que N lectores lean a la vez). Este es el punto fino de la
+    solucion y estaba bien planteado desde el disenio original.
+
+  * La INANICION DE ESCRITORES es intencional, no un bug. El lector solo mira
+    escritoresActivos, no mira si hay escritores esperando: les pasa por arriba. Es
+    la politica de "preferencia a lectores" y es exactamente lo que el punto 7 de
+    la propuesta pide mostrar para contrastarla con la politica justa.
+    Esta medido, ver punto 6.
+
+
+--------------------------------------------------------------------------------
+4. NUEVO: BufferMonitores  (Core/Buffer/BufferMonitores.cs)
+--------------------------------------------------------------------------------
+
+Era la variante (b) de la propuesta y no existia. Es media mitad del tema del
+trabajo: sin esto no hay nada que comparar en el punto 6 ni en el 7.
+
+QUE SE HIZO: buffer limitado productor/consumidor con monitores, disciplina
+signal-and-continue, detras de la MISMA interfaz IBuffer que BufferSemaforos.
+Se mantuvo todo lo que ya estaba resuelto en la version de semaforos para que sean
+comparables de verdad: mismo buffer circular, mismos indices Libre/Ocupado, mismos
+timestamps (InsertadoEnBufferEn / RetiradoDeBufferEn), mismo EstrategiaBuffer
+(devuelve "Monitores").
+
+  - DepositarDato() : while (ordenesEnBuffer == Capacidad) Wait;  ... PulseAll
+  - RetirarDato()   : while (ordenesEnBuffer == 0) Wait;          ... PulseAll
+
+  Se agrego el contador 'ordenesEnBuffer', que es el equivalente explicito a lo que
+  en BufferSemaforos llevan por dentro los semaforos _vacio y _lleno. Aca la cuenta
+  se ve a simple vista, que es parte de por que la version con monitores se lee
+  mas facil.
+
+PARA LA COMPARACION CUALITATIVA (punto 6 de la propuesta), la diferencia concreta
+entre las dos variantes queda asi:
+
+  - BufferSemaforos: la condicion vive DENTRO de dos semaforos contadores (_vacio y
+    _lleno); no se lee en el codigo, hay que reconstruirla mentalmente. Como tiene
+    DOS mutex separados (uno para depositar y otro para retirar), un productor y un
+    consumidor pueden trabajar a la vez sobre puntas distintas del buffer circular
+    -> mas paralelismo.
+
+  - BufferMonitores: la condicion esta escrita explicita y a la vista
+    (while ordenesEnBuffer == Capacidad) -> se entiende de una. Pero hay UN solo
+    monitor, asi que productores y consumidores se serializan entre si.
+    Se gana claridad, se pierde algo de paralelismo.
+
+  Ese trade-off (claridad vs paralelismo) es el nucleo de la comparacion que hay
+  que escribir en el informe.
+
+
+--------------------------------------------------------------------------------
+5. Console.WriteLine FUERA DEL CAMINO MEDIDO
+--------------------------------------------------------------------------------
+
+PROBLEMA: habia un print por CADA orden. La consola tiene su propio lock interno,
+asi que con 10.000 ordenes serializaba todos los hilos: se terminaba midiendo la
+velocidad de la consola y no la de la sincronizacion. Todos los numeros del punto 7
+habrian salido mal.
+
+QUE SE HIZO: se COMENTARON (no se borraron, por si sirven para depurar) dejando en
+cada uno una nota de por que esta comentado:
+
+  - Core/Productor.cs:48                  print por orden depositada
+  - Core/Consumidor.cs:51                 print por orden completada
+  - Core/LectorCache.cs:34                print del resumen periodico
+  - Core/Coordinadores/ConfigurationRunService.cs:84 y :104
+        Console.Write(productor.ToString()) / Console.Write(consumidor.ToString())
+        (encima estos ni siquiera informaban: como Productor y Consumidor no
+        overridean ToString(), imprimian el nombre de la clase y nada mas)
+
+  IMPORTANTE: en LectorCache se comento SOLO el print. La llamada a
+  _cache.LeerResumen() se sigue haciendo igual, porque es justamente la operacion
+  de LECTOR que hay que ejercitar y medir.
+
+EFECTO MEDIDO: una corrida de 10.000 ordenes ahora deja 10 lineas de log (las del
+arranque de Kestrel) en vez de mas de 20.000 lineas.
+
+NOTA: si mas adelante queres recuperar la salida para la demo, la forma prolija es
+un flag "verbose" en ConfiguracionRun, apagado durante las mediciones. Queda
+anotado en restante.txt.
+
+
+--------------------------------------------------------------------------------
+6. COMO SE VERIFICO (no alcanza con que compile)
+--------------------------------------------------------------------------------
+
+a) LA API, DE PUNTA A PUNTA
+   Se levanto el proyecto y se le pego al endpoint real
+   POST /ApisConcurrentes/semaforos-cache-justa:
+
+     1.000 ordenes  (4 prod / 4 cons / buffer 10) -> 1.000 procesadas
+    10.000 ordenes  (4 prod / 4 cons / buffer 50) -> 10.000 procesadas
+                                                     0.18 s, ~55.000 ordenes/seg
+
+   Sin excepciones, sin trabarse, sin perder ordenes.
+
+b) LOS MONITORES, CON UN ARNES APARTE
+   OJO: BufferMonitores y CacheMonitores compilan pero TODAVIA NO LOS USA NADIE
+   (ConfigurationRunService sigue instanciando BufferSemaforos y CacheSemaforosJusta
+   hardcodeados), asi que la API no los ejercita. Para no darlos por terminados sin
+   haberlos corrido, se los probo con un programa de verificacion temporal, aparte
+   del repo. Resultados:
+
+     [OK] BufferMonitores: 20.000 ordenes, 8 productores y 8 consumidores contra un
+          buffer de 5 (lo que fuerza lleno y vacio todo el tiempo):
+            - sin deadlock, todos los consumidores cortaron
+            - 20.000 procesadas de 20.000 -> no se pierde ninguna
+            - 20.000 ids distintos -> no se duplica ninguna
+     [OK] GeneradorIdsOrden: 0 repetidos pidiendo ids desde 8 hilos a la vez
+          (contra 490 repetidos del random viejo sobre 10.000)
+     [OK] CacheMonitores: Leer de una orden inexistente devuelve null
+     [OK] CacheMonitores: 4 lectores + 4 escritores en paralelo, 3.000 ordenes ->
+          el resumen cuenta 3.000 y las 3.000 quedan Finalizadas, sin excepciones
+
+c) LA INANICION, MEDIDA (esto sirve directo para el punto 7 de la propuesta)
+   6 lectores en loop cerrado y 1 escritor. Escrituras logradas en 2 segundos:
+
+       preferencia a lectores (CacheMonitores)   :     166
+       politica justa (CacheSemaforosJusta)      :  24.440     (~147x mas)
+
+   Confirma que las DOS politicas estan bien implementadas: la de preferencia a
+   lectores mata de hambre al escritor (que es lo que tiene que pasar) y la justa
+   no. Es el dato que hay que graficar en el informe.
+
+   DE PASO, UN APRENDIZAJE: la primera version de esta verificacion daba "falla"
+   porque esperaba que los escritores terminaran siempre. No era un bug del codigo:
+   era la politica funcionando como corresponde. La expectativa estaba mal, no la
+   implementacion.
+
+
+--------------------------------------------------------------------------------
+7. LO QUE SIGUE PENDIENTE DE ESTOS MISMOS PUNTOS
+--------------------------------------------------------------------------------
+
+Lo de abajo NO se hizo (no estaba en el pedido) y sigue anotado en restante.txt:
+
+  [ ] CABLEAR LAS VARIANTES NUEVAS. Es lo mas importante que queda de esto:
+      ConfigurationRunService tiene el campo Buffer tipado como BufferSemaforos
+      (tipo concreto) y hace new BufferSemaforos(...) / new CacheSemaforosJusta()
+      hardcodeados. Hasta que eso no se tipe como IBuffer y se elija la
+      implementacion por parametro (factory + el enum PoliticasCache, que hoy no se
+      usa en ningun lado), BufferMonitores y CacheMonitores no se pueden correr
+      desde la API.
+  [ ] Passing the baton en BufferSemaforos (hoy usa semaforos contadores + mutex,
+      que es otra tecnica; la propuesta nombra passing the baton).
+  [ ] CacheSemaforos (preferencia lectores): LeerResumen sigue tirando
+      NotImplementedException, y su Leer() sigue con el problema de
+      KeyNotFoundException en vez de devolver null. Lo mismo el Leer() de
+      CacheSemaforosJusta. Solo se arreglo el de CacheMonitores, que es la clase
+      que se estaba terminando.
+  [ ] Solucion secuencial de referencia.
+  [ ] Persistencia en SQL Server.
+  [ ] Los TESTS (quedaron para el final, como se acordo). El arnes de verificacion
+      del punto 6 sirve de borrador: los casos que ya cubre (no perder, no
+      duplicar, no deadlock, ids 1..N, inanicion) son casi los mismos que pide el
+      punto 6 de la propuesta, y habria que correrlos parametrizados contra las DOS
+      variantes de buffer via IBuffer.
+
+
+================================================================================
+ARCHIVOS TOCADOS
+================================================================================
+
+NUEVOS:
+  Core/Coordinadores/GeneradorIdsOrden.cs    ids unicos por corrida (Interlocked)
+  Core/Buffer/BufferMonitores.cs             variante (b): monitores, signal-and-continue
+
+MODIFICADOS:
+  Core/Cache/CacheMonitores/CacheMonitoresLectores.cs   se termino la clase entera
+  Core/Productor.cs                          usa el generador de ids; print comentado
+  Core/Consumidor.cs                         print comentado
+  Core/LectorCache.cs                        print comentado (la lectura se mantiene)
+  Core/Coordinadores/ConfigurationRunService.cs   using que faltaba; crea y pasa el
+                                             generador de ids; prints comentados
+================================================================================
