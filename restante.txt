@@ -16,8 +16,7 @@ y los Console.WriteLine del camino medido. El detalle de COMO se resolvio cada u
 esta en soluciones.txt. Abajo, cada punto ya resuelto quedo marcado [RESUELTO].
 
 Lo grande que sigue faltando: cablear las variantes nuevas para poder elegirlas
-desde la API, passing the baton en BufferSemaforos, la solucion secuencial, la
-persistencia, las mediciones y los TESTS.
+desde la API, la solucion secuencial, la persistencia, las mediciones y los TESTS.
 
 
 --------------------------------------------------------------------------------
@@ -103,20 +102,16 @@ paso destrabe el siguiente.
 [OK]     Core/Buffer/IBuffer.cs
          La interfaz comun existe (DepositarDato / RetirarDato / EstrategiaBuffer).
 
-[PARCIAL] Core/Buffer/BufferSemaforos.cs
-         Funciona y es correcto, PERO NO ES "PASSING THE BATON".
-         Hoy usa la solucion clasica de semaforos contadores:
-             _vacio.Wait() -> _mutexDepositar.Wait() -> ... -> _lleno.Release()
-         Eso son semaforos contadores + mutex, que es otra tecnica distinta.
-         La propuesta pide explicitamente: "Con semaforos, aplicando la tecnica
-         passing the baton".
-         -> Falta reescribirlo con el esquema de passing the baton: un semaforo
-            testigo (_entrada), contadores de estado, colas de demorados para
-            productores y consumidores, y un metodo Signal() que decida a quien
-            pasarle el baton. El modelo ya lo tenes hecho y bien comentado en
-            CacheSemaforosJusta.cs: es exactamente el mismo patron.
-         NOTA: si preferis defender la version actual, hay que justificarlo por
-         escrito en el informe, porque la propuesta nombra la tecnica.
+[RESUELTO] Core/Buffer/BufferSemaforos.cs
+         Usa semaforos contadores + mutex (_vacio/_lleno + _mutexDepositar/
+         _mutexRetirar), NO passing the baton. Decision consciente, ya
+         justificada por escrito en el informe: en un buffer acotado las
+         condiciones de espera (lleno/vacio) son disjuntas y simetricas, no
+         hay guarda compuesta ni politica de prioridad que arbitrar entre
+         productores y consumidores, asi que el semaforo contador ya resuelve
+         la señalizacion condicional por si solo. PtB se aplico donde si
+         aporta valor: en la cache (CacheSemaforosJusta), que tiene que
+         decidir entre ramas y sostener una politica de prioridad.
 
 [RESUELTO] Core/Buffer/BufferMonitores.cs  <-- YA EXISTE, se hizo entero
          Es la variante (b) de la propuesta: monitores con disciplina
@@ -398,14 +393,12 @@ LO QUE FALTA, en este orden (cada uno destraba al siguiente):
      BufferMonitores y CacheMonitores ya estan hechos y probados pero NO SE
      PUEDEN CORRER desde la API hasta que esto exista. Sin esto no hay
      comparacion (punto 6 de la propuesta) ni mediciones (punto 7).
-  2. Passing the baton en BufferSemaforos (punto 1) - hoy la tecnica que dice
-     la propuesta no esta aplicada en el buffer (si en la cache).
-  3. Solucion secuencial (punto 6) - linea base para la comparacion.
-  4. Completar CacheSemaforos (preferencia lectores): LeerResumen sigue en
+  2. Solucion secuencial (punto 6) - linea base para la comparacion.
+  3. Completar CacheSemaforos (preferencia lectores): LeerResumen sigue en
      NotImplementedException (punto 2.B). Necesario para comparar politicas.
-  5. Persistencia SQL Server (punto 5) - decidir si entra o se justifica sacarla.
-  6. Barrido de mediciones, tablas/graficos e informe (puntos 8 y 9).
-  7. Proyecto de tests (punto 4) - se dejo para el final, como se acordo. Es un
+  4. Persistencia SQL Server (punto 5) - decidir si entra o se justifica sacarla.
+  5. Barrido de mediciones, tablas/graficos e informe (puntos 8 y 9).
+  6. Proyecto de tests (punto 4) - se dejo para el final, como se acordo. Es un
      entregable explicito y son los indicadores de evaluacion.
      ATAJO: el arnes de verificacion que se uso al arreglar todo esto ya cubre
      casi los mismos casos (no perder, no duplicar, no deadlock, ids 1..N,
@@ -414,6 +407,8 @@ LO QUE FALTA, en este orden (cada uno destraba al siguiente):
 Lo que ya esta bien y no hay que tocar:
   - CacheSemaforosJusta (passing the baton + politica justa): completa y clara.
   - CacheMonitores y BufferMonitores (nuevos): terminados y verificados.
+  - BufferSemaforos (semaforos contadores, sin PtB por decision ya
+    justificada en el informe: la tecnica se aplico en la cache, no aca).
   - La interfaz ICache y el modelo de estados.
   - CalculadoraMetricas y la instrumentacion de tiempos en Orden.
   - El mecanismo de poison pill para cortar los consumidores.
