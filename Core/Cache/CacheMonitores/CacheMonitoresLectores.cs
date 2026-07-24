@@ -20,7 +20,7 @@ namespace SistemaConcurrente.Core.Cache.CacheMonitores
     //  OJO con el alcance del monitor: el lock protege SOLO los contadores, no el diccionario. El
     //  acceso real a _estados se hace afuera del lock; si se hiciera adentro, los lectores se
     //  serializarian entre si y se perderia todo el sentido de lectores/escritores.
-    public class CacheMonitores : ICache
+    public class CacheMonitoresLectores : ICache
     {
         private readonly Dictionary<int, EstadoOrden> _estados = new();
 
