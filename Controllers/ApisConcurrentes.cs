@@ -52,6 +52,20 @@ namespace SistemaConcurrente.Controllers
 
         // Esta API utiliza monitores, en el buffer limitado la disciplina signal-and-continue y en la cache el acceso concurrente de lectores sin prioridad a escritores
         [HttpPost("monitores-cache-sin-prioridad")]
+        public async Task<ApisResponse> MonitoresCacheSinPrioridad([FromBody] ConfiguracionRun parametros)
+        {
+            ICache cache = new CacheMonitoresLectores();
+            IBuffer buffer = new BufferMonitores(parametros.CapacidadBuffer);
+
+            // Falta la definición de 'buffer', asegúrate de declarar o pasar el parámetro correcto aquí.
+            ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CantIteraciones, parametros.CantOrdenes, parametros.CantLectores, cache, buffer);
+
+            ResultadoEjecucion resultado = await service.Ejecutar();
+
+            return CalculadoraMetricas.Calcular(resultado.Ordenes, resultado.TiempoTotalSegundos, "MonitoresSinPrioridad");
+        }
+
+        [HttpPost("monitores-cache-justa")]
         public async Task<ApisResponse> MonitoresCacheJusta([FromBody] ConfiguracionRun parametros)
         {
             ICache cache = new CacheMonitoresLectores();
@@ -64,6 +78,8 @@ namespace SistemaConcurrente.Controllers
 
             return CalculadoraMetricas.Calcular(resultado.Ordenes, resultado.TiempoTotalSegundos, "MonitoresSinPrioridad");
         }
+
+
 
 
 
