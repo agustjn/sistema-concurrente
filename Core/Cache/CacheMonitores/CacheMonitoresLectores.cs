@@ -1,25 +1,5 @@
 namespace SistemaConcurrente.Core.Cache.CacheMonitores
 {
-    //  Cache de estados resuelta como LECTORES/ESCRITORES con MONITORES, disciplina
-    //  SIGNAL-AND-CONTINUE y politica de PREFERENCIA A LECTORES.
-    //
-    //  Que significa signal-and-continue: cuando un hilo hace Monitor.PulseAll, NO le entrega el
-    //  monitor al que despierta; sigue el mismo, y recien suelta el lock al salir del lock(){}. El
-    //  despertado queda compitiendo por reentrar. Por eso la condicion se reevalua SIEMPRE con
-    //  while (...) Monitor.Wait(...) y nunca con if: entre que lo despiertan y que consigue el
-    //  monitor de nuevo, la condicion pudo volver a ser falsa (se la pudo "robar" otro hilo).
-    //  Esta es la diferencia con la version de semaforos (CacheSemaforosJusta), donde el baton se
-    //  pasa directo y el despertado ya arranca con la condicion garantizada, sin reevaluar.
-    //
-    //  Preferencia a lectores: el lector solo se frena si hay un escritor ACTIVO; no mira si hay
-    //  escritores esperando. Entonces, mientras siga entrando un lector atras de otro, el escritor
-    //  demorado nunca ve lectoresActivos == 0 y puede morir de hambre (inanicion). Eso no es un bug:
-    //  es justamente el comportamiento que hay que mostrar y medir para contrastarlo con la politica
-    //  justa (ver CacheSemaforosJusta, que suma la condicion de escritoresDemorados == 0).
-    //
-    //  OJO con el alcance del monitor: el lock protege SOLO los contadores, no el diccionario. El
-    //  acceso real a _estados se hace afuera del lock; si se hiciera adentro, los lectores se
-    //  serializarian entre si y se perderia todo el sentido de lectores/escritores.
     public class CacheMonitoresLectores : ICache
     {
         private readonly Dictionary<int, EstadoOrden> _estados = new();
@@ -33,9 +13,7 @@ namespace SistemaConcurrente.Core.Cache.CacheMonitores
         {
             this.PedidoEscribir();
 
-            // ---------- seccion critica de escritura (EXCLUSIVA) ----------
             _estados[ordenId] = estado;
-            // --------------------------------------------------------------
 
             this.LiberaEscribir();
         }
@@ -44,9 +22,6 @@ namespace SistemaConcurrente.Core.Cache.CacheMonitores
         {
             this.PedidoLeer();
 
-            // ---------- seccion de lectura (CONCURRENTE entre lectores) ----------
-            // TryGetValue y no _estados[ordenId]: el contrato de ICache dice que si la orden
-            // todavia no fue registrada se devuelve null, no que explote con KeyNotFoundException.
             EstadoOrden? estado = _estados.TryGetValue(ordenId, out var encontrado) ? encontrado : null;
 
             this.LiberaLeer();

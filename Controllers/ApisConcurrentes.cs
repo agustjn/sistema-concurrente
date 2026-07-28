@@ -26,7 +26,6 @@ namespace SistemaConcurrente.Controllers
             ICache cache = new CacheSemaforosJusta();
             IBuffer buffer = new BufferSemaforos(parametros.CapacidadBuffer);
 
-            // Falta la definición de 'buffer', asegúrate de declarar o pasar el parámetro correcto aquí.
             ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CantIteraciones, parametros.CantOrdenes, parametros.CantLectores, cache, buffer);
 
             ResultadoEjecucion resultado = await service.Ejecutar();
@@ -35,14 +34,13 @@ namespace SistemaConcurrente.Controllers
         }
 
         // Esta API utiliza semaforos:
-        // El buffer limitado se gestiona a traves de semaforos contadores para la sincronizacion por condicion y semaforos mutex para la exclusion mutua
+        // El buffer limitado se gestiona a traves de semaforos contadores para la sincronizacion por condicion y semaforos binarios (mutex) para la exclusion mutua
         [HttpPost("semaforos-cache-sin-prioridad")]
         public async Task<ApisResponse> SemaforosCacheSinPrioridad([FromBody] ConfiguracionRun parametros)
         {
             ICache cache = new CacheSemaforos();
             IBuffer buffer = new BufferSemaforos(parametros.CapacidadBuffer);
 
-            // Falta la definición de 'buffer', asegúrate de declarar o pasar el parámetro correcto aquí.
             ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CantIteraciones, parametros.CantOrdenes, parametros.CantLectores, cache, buffer);
 
             ResultadoEjecucion resultado = await service.Ejecutar();
@@ -68,10 +66,9 @@ namespace SistemaConcurrente.Controllers
         [HttpPost("monitores-cache-justa")]
         public async Task<ApisResponse> MonitoresCacheJusta([FromBody] ConfiguracionRun parametros)
         {
-            ICache cache = new CacheMonitoresLectores();
+            ICache cache = new CacheMonitoresJusta();
             IBuffer buffer = new BufferMonitores(parametros.CapacidadBuffer);
 
-            // Falta la definición de 'buffer', asegúrate de declarar o pasar el parámetro correcto aquí.
             ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CantIteraciones, parametros.CantOrdenes, parametros.CantLectores, cache, buffer);
 
             ResultadoEjecucion resultado = await service.Ejecutar();
