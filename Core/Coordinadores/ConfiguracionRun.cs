@@ -9,5 +9,7 @@
         // Cantidad de hilos lectores que consultan la cache periodicamente (default: 2).
         public int CantLectores { get; set; } = 2;
         public int CantIteraciones { get; set; }
+        // Rango entre:
+        public int intervaloMsDeLecturas { get; set; }
     }
 }

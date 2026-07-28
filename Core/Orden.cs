@@ -33,8 +33,6 @@ namespace SistemaConcurrente.Core
         // Latencia extremo a extremo: CreadoEn -> CompletadoEn
         public double? LatenciaMs { get; set; }
 
-        // Tecnica de sincronización con la cache utilizada: "SemaforosJusta" | "SemaforosLectores" | "MonitorJusta" | "MonitorLectores".</summary>
-        public PoliticasCache TecnicaCache { get; set; }
         public string TecnicaBuffer { get; set; }
 
         // El bool y el metodo estatico se utilizan para poder cortar los threads en los semaforos que quedan en _lleno.Wait(), los cuales una vez finalizadas toads las ordenes,

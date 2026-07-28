@@ -4,7 +4,6 @@
     {
         private readonly Dictionary<int, EstadoOrden> _estados = new();
 
-        private readonly SemaphoreSlim _colaLectores = new SemaphoreSlim(1, int.MaxValue);
         private int _lectoresActivos = 0;
         private readonly SemaphoreSlim _colaEscritores = new SemaphoreSlim(1, 1);
         private readonly SemaphoreSlim _mutex = new SemaphoreSlim(1, 1);
@@ -21,24 +20,51 @@
 
         public EstadoOrden? Leer(int ordenId)
         {
-            _mutex.Wait();
-            _lectoresActivos++;
-            if (_lectoresActivos == 1)
-                _colaEscritores.Wait();
-            _mutex.Release();
-            var estadoOrden = _estados[ordenId];
-            _mutex.Wait();
-            _lectoresActivos--;
-            if (_lectoresActivos == 0)
-                _colaEscritores.Release();
-            _mutex.Release();
+            EntrarComoLector();
 
+            // Contrato de ICache: null si la orden todavia no fue registrada (el indexer directo tiraba KeyNotFoundException)
+            EstadoOrden? estadoOrden = _estados.TryGetValue(ordenId, out var encontrado) ? encontrado : null;
+
+            SalirComoLector();
             return estadoOrden;
         }
 
         public ResumenCache LeerResumen()
         {
-            throw new NotImplementedException();
+            EntrarComoLector();
+
+            int generadas = 0, enProceso = 0, finalizadas = 0;
+            foreach (var estado in _estados.Values)
+            {
+                switch (estado)
+                {
+                    case EstadoOrden.Generada: generadas++; break;
+                    case EstadoOrden.EnProceso: enProceso++; break;
+                    case EstadoOrden.Finalizada: finalizadas++; break;
+                }
+            }
+
+
+            SalirComoLector();
+            return new ResumenCache(generadas, enProceso, finalizadas);
+        }
+
+        private void EntrarComoLector()
+        {
+            _mutex.Wait();
+            _lectoresActivos++;
+            if (_lectoresActivos == 1)
+                _colaEscritores.Wait();
+            _mutex.Release();
+        }
+
+        private void SalirComoLector()
+        {
+            _mutex.Wait();
+            _lectoresActivos--;
+            if (_lectoresActivos == 0)
+                _colaEscritores.Release();
+            _mutex.Release();
         }
     }
 }

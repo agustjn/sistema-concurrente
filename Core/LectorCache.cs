@@ -5,7 +5,7 @@ namespace SistemaConcurrente.Core
     // Hilo LECTOR de la cache. A diferencia de productores y consumidores (que ESCRIBEN el
     // estado de las ordenes), el lector solo CONSULTA: cada cierto intervalo pide un resumen
     // de la cache y lo muestra. Sirve para ejercitar el lado "lector" del problema
-    // lectores/escritores mientras productores y consumidores escriben en paralelo.
+    // lectores/escritores, mientras productores y consumidores escriben en paralelo
     public class LectorCache
     {
         public int Id { get; set; }
@@ -16,12 +16,12 @@ namespace SistemaConcurrente.Core
         // Cada cuanto (ms) el lector vuelve a consultar la cache.
         private readonly int _intervaloMs;
 
-        public LectorCache(int id, string name, ICache cache, int intervaloMs)
+        public LectorCache(int id, string name, ICache cache, int intervaloMsDeLecturas)
         {
             Id = id;
             Name = name;
             _cache = cache;
-            _intervaloMs = intervaloMs;
+            _intervaloMs = intervaloMsDeLecturas;
         }
 
         // Lee la cache periodicamente hasta que la corrida pide cancelar (cuando ya no quedan
@@ -30,15 +30,9 @@ namespace SistemaConcurrente.Core
         {
             while (!token.IsCancellationRequested)
             {
-                ResumenCache resumen = _cache.LeerResumen();   // operacion de LECTOR
-                // Comentado a proposito: el print esta dentro del tramo que se mide, y la consola
-                // serializa a todos los lectores entre si. La lectura de la cache se sigue haciendo
-                // igual (que es lo que interesa ejercitar del lado LECTOR).
-                //Console.WriteLine(
-                //    $"[Lector #{Id}] {resumen.Generadas} generadas / {resumen.EnProceso} en proceso / " +
-                //    $"{resumen.Finalizadas} finalizadas (total {resumen.Total})");
+                ResumenCache resumen = _cache.LeerResumen();   
 
-                Thread.Sleep(_intervaloMs);   // espera entre lecturas: lectura "periodica"
+                Thread.Sleep(_intervaloMs);   // espera entre lecturas (parametrizado para poder jugar con la cantidad de lecturas)
             }
         }
     }

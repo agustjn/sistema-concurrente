@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using SistemaConcurrente.Core;
 using SistemaConcurrente.Core.Buffer;
 using SistemaConcurrente.Core.Cache;
 using SistemaConcurrente.Core.Cache.CacheMonitores;
@@ -20,13 +21,23 @@ namespace SistemaConcurrente.Controllers
 
         }
 
+        [HttpPost("proceso-secuencial")]
+        public ApisResponse ProcesoSecuencial([FromBody] ConfiguracionRun parametros)
+        {
+            ProcesadorSecuencial procesador = new ProcesadorSecuencial(parametros.CantOrdenes, parametros.CantIteraciones);
+
+            ResultadoEjecucion resultado = procesador.Ejecutar();
+
+            return CalculadoraMetricas.Calcular(resultado.Ordenes, resultado.TiempoTotalSegundos, "Secuencial");
+        }
+
         [HttpPost("semaforos-cache-justa")]
         public async Task<ApisResponse> SemaforosCacheJusta([FromBody] ConfiguracionRun parametros)
         {
             ICache cache = new CacheSemaforosJusta();
             IBuffer buffer = new BufferSemaforos(parametros.CapacidadBuffer);
 
-            ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CantIteraciones, parametros.CantOrdenes, parametros.CantLectores, cache, buffer);
+            ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CantIteraciones, parametros.CantOrdenes, parametros.CantLectores, cache, buffer, parametros.intervaloMsDeLecturas);
 
             ResultadoEjecucion resultado = await service.Ejecutar();
 
@@ -41,11 +52,11 @@ namespace SistemaConcurrente.Controllers
             ICache cache = new CacheSemaforos();
             IBuffer buffer = new BufferSemaforos(parametros.CapacidadBuffer);
 
-            ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CantIteraciones, parametros.CantOrdenes, parametros.CantLectores, cache, buffer);
+            ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CantIteraciones, parametros.CantOrdenes, parametros.CantLectores, cache, buffer, parametros.intervaloMsDeLecturas);
 
             ResultadoEjecucion resultado = await service.Ejecutar();
 
-            return CalculadoraMetricas.Calcular(resultado.Ordenes, resultado.TiempoTotalSegundos, "SemaforosJusta");
+            return CalculadoraMetricas.Calcular(resultado.Ordenes, resultado.TiempoTotalSegundos, "SemaforosSinPrioridad");
         }
 
         // Esta API utiliza monitores, en el buffer limitado la disciplina signal-and-continue y en la cache el acceso concurrente de lectores sin prioridad a escritores
@@ -55,25 +66,25 @@ namespace SistemaConcurrente.Controllers
             ICache cache = new CacheMonitoresLectores();
             IBuffer buffer = new BufferMonitores(parametros.CapacidadBuffer);
 
-            // Falta la definición de 'buffer', asegúrate de declarar o pasar el parámetro correcto aquí.
-            ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CantIteraciones, parametros.CantOrdenes, parametros.CantLectores, cache, buffer);
+            ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CantIteraciones, parametros.CantOrdenes, parametros.CantLectores, cache, buffer, parametros.intervaloMsDeLecturas);
 
             ResultadoEjecucion resultado = await service.Ejecutar();
 
             return CalculadoraMetricas.Calcular(resultado.Ordenes, resultado.TiempoTotalSegundos, "MonitoresSinPrioridad");
         }
 
+        // Esta API utiliza monitores en buffer y cache; la cache aplica la politica justa (los lectores ceden si hay escritores demorados)
         [HttpPost("monitores-cache-justa")]
         public async Task<ApisResponse> MonitoresCacheJusta([FromBody] ConfiguracionRun parametros)
         {
             ICache cache = new CacheMonitoresJusta();
             IBuffer buffer = new BufferMonitores(parametros.CapacidadBuffer);
 
-            ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CantIteraciones, parametros.CantOrdenes, parametros.CantLectores, cache, buffer);
+            ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CantIteraciones, parametros.CantOrdenes, parametros.CantLectores, cache, buffer, parametros.intervaloMsDeLecturas);
 
             ResultadoEjecucion resultado = await service.Ejecutar();
 
-            return CalculadoraMetricas.Calcular(resultado.Ordenes, resultado.TiempoTotalSegundos, "MonitoresSinPrioridad");
+            return CalculadoraMetricas.Calcular(resultado.Ordenes, resultado.TiempoTotalSegundos, "MonitoresJusta");
         }
 
 

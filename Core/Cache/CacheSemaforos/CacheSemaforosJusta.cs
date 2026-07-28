@@ -19,43 +19,6 @@ namespace SistemaConcurrente.Core.Cache.CacheSemaforos
         private readonly SemaphoreSlim _colaEscritores = new SemaphoreSlim(0, int.MaxValue);
 
 
-        //  SIGNAL
-        //  Lo invoca quien tiene el testigo cuando termina de tocar los contadores. Decide a
-        //  quien pasarselo. Se evalua EXACTAMENTE una rama (passing the baton pasa el baton a
-        //  UN solo proceso):
-        //
-        //    1) Si pueden leer (no hay escritor activo NI escritores esperando) y hay lectores
-        //       demorados -> despierta a UN lector. (En cascada, ese lector volvera a llamar a
-        //       este SIGNAL y despertara al siguiente, hasta vaciar la cola de lectores.)
-        //    2) Si no, si puede escribir (no hay lectores ni escritores activos) y hay escritores
-        //       demorados -> despierta a UN escritor.
-        //    3) Si nadie puede avanzar -> libera la entrada (suelta el testigo).
-        //
-        //  La condicion de la rama (1) es la clave de la politica JUSTA: incluye
-        //  "escritoresDemorados == 0", de modo que mientras haya un escritor esperando NO se
-        //  habilitan lectores nuevos, evitando que los escritores mueran de hambre.
-        // ------------------------------------------------------------------------------------
-        private void Signal()
-        {
-            if (escritoresActivos == 0 && escritoresDemorados == 0 && lectoresDemorados > 0)
-            {
-                lectoresDemorados--;
-                _colaLectores.Release();      // baton a un lector demorado
-            }
-            else if (lectoresActivos == 0 && escritoresActivos == 0 && escritoresDemorados > 0)
-            {
-                escritoresDemorados--;
-                _colaEscritores.Release();    // baton a un escritor demorado
-            }
-            else
-            {
-                _entrada.Release();           // nadie puede avanzar: se suelta el testigo
-            }
-        }
-
-        // ------------------------------------------------------------------------------------
-        //  ESCRITOR: acceso exclusivo para registrar/actualizar el estado de una orden.
-        // ------------------------------------------------------------------------------------
         public void Escribir(int ordenId, EstadoOrden estado)
         {
             _entrada.Wait();                                  // P(e): tomo el testigo
@@ -84,7 +47,8 @@ namespace SistemaConcurrente.Core.Cache.CacheSemaforos
         {
             EntrarComoLector();
 
-            EstadoOrden? resultado = _estados[ordenId];
+           
+            EstadoOrden? resultado = _estados.TryGetValue(ordenId, out var encontrado) ? encontrado : null;
 
             SalirComoLector();
             return resultado;
@@ -114,9 +78,34 @@ namespace SistemaConcurrente.Core.Cache.CacheSemaforos
             return new ResumenCache(generadas, enProceso, finalizadas);
         }
 
-        // ------------------------------------------------------------------------------------
-        //  Protocolo de ENTRADA de un lector (compartido por Leer y LeerResumen).
-        // ------------------------------------------------------------------------------------
+        //    1) Si pueden leer (no hay escritor activo NI escritores esperando) y hay lectores
+        //       demorados -> despierta a UN lector. (En cascada, ese lector volvera a llamar a
+        //       este SIGNAL y despertara al siguiente, hasta vaciar la cola de lectores.)
+        //    2) Si no, si puede escribir (no hay lectores ni escritores activos) y hay escritores
+        //       demorados -> despierta a UN escritor.
+        //    3) Si nadie puede avanzar -> libera la entrada (suelta el testigo).
+        //
+        //  La condicion de la rama (1) es la clave de la politica JUSTA: incluye
+        //  "escritoresDemorados == 0", de modo que mientras haya un escritor esperando NO se
+        //  habilitan lectores nuevos, evitando que los escritores mueran de hambre.
+        private void Signal()
+        {
+            if (escritoresActivos == 0 && escritoresDemorados == 0 && lectoresDemorados > 0)
+            {
+                lectoresDemorados--;
+                _colaLectores.Release();      // baton a un lector demorado
+            }
+            else if (lectoresActivos == 0 && escritoresActivos == 0 && escritoresDemorados > 0)
+            {
+                escritoresDemorados--;
+                _colaEscritores.Release();    // baton a un escritor demorado
+            }
+            else
+            {
+                _entrada.Release();           // nadie puede avanzar: se suelta el testigo
+            }
+        }
+
         private void EntrarComoLector()
         {
             _entrada.Wait();                                  // P(e): tomo el testigo
@@ -133,9 +122,6 @@ namespace SistemaConcurrente.Core.Cache.CacheSemaforos
             Signal();
         }
 
-        // ------------------------------------------------------------------------------------
-        //  Protocolo de SALIDA de un lector.
-        // ------------------------------------------------------------------------------------
         private void SalirComoLector()
         {
             _entrada.Wait();                                  // P(e): retomo el testigo para salir

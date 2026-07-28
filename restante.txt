@@ -1,7 +1,9 @@
 ================================================================================
 RESTANTE - Sistema Concurrente (Trabajo Final Programacion Concurrente)
-Chequeo del estado del proyecto contra "Propuesta de tema para trabajo final"
-Fecha: 2026-07-14  |  Rama: fin  |  Ultimo commit: c39fe06
+Chequeo contra "Propuesta de tema para trabajo final"
+Fecha: 2026-07-28  |  Rama: master
+Version corta: reemplaza al restante anterior, que quedo largo. Lo ya resuelto
+se lista una sola vez y sin detalle (el como quedo en soluciones.txt).
 
 LOS TRES ARCHIVOS:
   restante.txt     - ESTE: que falta hacer (el chequeo contra la propuesta)
@@ -10,407 +12,84 @@ LOS TRES ARCHIVOS:
                      correctos (la parte semantica; es el material del informe)
 ================================================================================
 
-ESTADO GENERAL (actualizado): EL PROYECTO YA COMPILA (0 errores) y corre de punta
-a punta. Se resolvieron: el build, los ids random, CacheMonitores, BufferMonitores
-y los Console.WriteLine del camino medido. El detalle de COMO se resolvio cada uno
-esta en soluciones.txt. Abajo, cada punto ya resuelto quedo marcado [RESUELTO].
+YA CUMPLIDO DE LA PROPUESTA
+  - Buffer limitado en dos variantes (semaforos / monitores) detras de IBuffer.
+  - Cache lectores/escritores: 4 variantes (2 politicas x 2 mecanismos).
+    CacheMonitoresJusta nueva y cableada.
+  - 4 endpoints en la API, uno por combinacion. ConfigurationRunService recibe
+    ICache e IBuffer por constructor.
+  - Ids unicos (GeneradorIdsOrden), poison pill, instrumentacion de tiempos,
+    CalculadoraMetricas, prints fuera del camino medido.
 
-Lo grande que sigue faltando: cablear las variantes nuevas para poder elegirlas
-desde la API, la solucion secuencial, la persistencia, las mediciones y los TESTS.
-
-
---------------------------------------------------------------------------------
-RESUMEN EN PROSA (lo hablado, tal cual)
-
-  NOTA: esto es el diagnostico ORIGINAL, de antes de empezar a corregir. Se deja
-  tal cual como quedo escrito. Varias de las cosas que menciona ya estan
-  resueltas (ver soluciones.txt); sirve como foto del punto de partida.
---------------------------------------------------------------------------------
-
-El proyecto no compila — hay 4 errores. CacheMonitores llama a tres métodos que
-nunca se escribieron (LiberaEscribir, PedidoLeer, LiberaLeer), y
-ConfigurationRunService no encuentra CacheSemaforosJusta por un using faltante.
-Ese último es de una línea; el otro es que la clase está a medio hacer.
-
-Tres cosas me parecen las más importantes, más allá de lo obvio que falta:
-
-Los IDs de las órdenes son random. En Core/Productor.cs:41-42 cada orden recibe
-rand.Next(1,100000). Con los volúmenes que pide la propuesta (1.000 / 5.000 /
-10.000) las colisiones son inevitables, y como la caché se indexa por ese ID, dos
-órdenes distintas se pisan el estado. Más grave todavía: el indicador principal
-de la propuesta es "cada orden se procesa exactamente una vez", y sin identidad
-única ese test no se puede escribir de forma confiable. Es un arreglo chico pero
-destraba todo el punto de correctitud.
-
-El buffer de semáforos no usa passing the baton. Core/Buffer/BufferSemaforos.cs
-funciona, pero está resuelto con semáforos contadores + mutex, que es otra
-técnica. La propuesta nombra passing the baton explícitamente. Lo curioso es que
-sí lo tenés bien aplicado —y muy bien comentado— en CacheSemaforosJusta, así que
-el modelo a seguir ya está en el repo.
-
-Los Console.WriteLine por orden van a arruinar las mediciones. La consola está
-sincronizada internamente, así que con 10.000 órdenes serializa los hilos y
-domina el tiempo total. Todos los números de la sección 7 saldrían midiendo la
-consola, no la sincronización.
-
-Después, lo que directamente falta: BufferMonitores entero (o sea, la mitad del
-tema del trabajo), el proyecto de tests (no hay ninguna referencia a
-xUnit/NUnit/MSTest en todo el repo), la solución secuencial que sirve de línea
-base, y toda la persistencia en SQL Server. El README está vacío.
-
-Lo mejor hecho es CacheSemaforosJusta — está completa, correcta y clara. También
-están bien la instrumentación de tiempos en Orden, CalculadoraMetricas y el
-mecanismo de poison pill.
-
-El archivo tiene un orden sugerido de trabajo al final, pensado para que cada
-paso destrabe el siguiente.
-
+DECISION TOMADA
+  - El nombre "Justa" SE MANTIENE: la propuesta (secc. 7) nombra las politicas
+    "preferencia a lectores" y "politica justa". En el informe se aclara que el
+    mecanismo interno es prioridad a escritores y que "justa" refiere a que
+    elimina la inanicion.
 
 --------------------------------------------------------------------------------
-0. BLOQUEANTE - ERRORES DE COMPILACION (arreglar primero)     [RESUELTO ENTERO]
+LO QUE FALTA, EN ESTE ORDEN (cada punto destraba el siguiente)
 --------------------------------------------------------------------------------
 
-[RESUELTO] Core/Cache/CacheMonitores/CacheMonitoresLectores.cs
-    La clase CacheMonitores llama a tres metodos que nunca se escribieron:
-      - LiberaEscribir()  (linea 16)
-      - PedidoLeer()      (linea 21)
-      - LiberaLeer()      (linea 23)
-    Ademas PedidoEscribir() espera con Monitor.Wait pero NUNCA incrementa
-    escritoresActivos, asi que aunque compilara no daria exclusion mutua.
-    -> Se termino la clase entera. Ver punto 2.C y soluciones.txt punto 3.
+1. ARREGLOS CHICOS QUE DESTRABAN LA MEDICION
+   [RESUELTO] CacheMonitoresJusta.LeerResumen(): implementado con el mismo
+       protocolo PedidoLeer/LiberaLeer que Leer(), recorrido fuera del lock.
+   [RESUELTO] CacheSemaforos.LeerResumen(): implementado extrayendo el protocolo
+       de lector a EntrarComoLector/SalirComoLector, compartido con Leer().
+   [RESUELTO] Leer() con _estados[ordenId] directo en CacheSemaforosJusta y
+       CacheSemaforos -> ahora TryGetValue + null, como pide ICache.
+   [RESUELTO] Etiquetas de tecnica cruzadas en ApisConcurrentes -> ahora
+       SemaforosSinPrioridad y MonitoresJusta.
+   [ ] IntervaloLecturaMs hardcodeado (50ms, const) en ConfigurationRunService
+       -> pasarlo a ConfiguracionRun; es la perilla para variar la proporcion
+       lecturas/escrituras que pide la secc. 7.
+   [RESUELTO] Menores: comentario suelto del controller, _colaLectores,
+       lectoresDemorados, throw->response en cero en CalculadoraMetricas,
+       Folder fantasma Core\Semaforos\ en el .csproj. WeatherForecast.cs ya
+       estaba borrado.
+   [ ] Enum PoliticasCache: lo referencia Orden.TecnicaCache pero nunca se
+       asigna -> decidir si se asigna en el Productor o se borra de ambos lados.
+   [ ] OJO: hay un stub de proceso-secuencial en el controller sin firma de
+       metodo -> NO COMPILA hasta completarlo o comentarlo (es del punto 2).
 
-[RESUELTO] Core/Coordinadores/ConfigurationRunService.cs:35
-    error CS0246: no encuentra el tipo 'CacheSemaforosJusta'.
-    Falta el using: SistemaConcurrente.Core.Cache.CacheSemaforos
-    (la clase existe y esta completa, es solo el import).
-    -> Se agrego el using. Build succeeded, 0 errores.
+2. SOLUCION SECUENCIAL (secc. 7)
+   [RESUELTO] Core/ProcesadorSecuencial.cs: un solo hilo, DOS simulaciones por
+       orden (igual que productor+consumidor), estados en Dictionary pelado,
+       sin buffer ni sincronizacion. Timestamps de buffer quedan null.
+   [RESUELTO] Endpoint POST proceso-secuencial (no async), tecnica "Secuencial".
+   [RESUELTO] CalculadoraMetricas tolera corridas sin buffer: espera en buffer
+       = null (no cero) y procesamiento = CreadoEn -> CompletadoEn.
+   PENDIENTE DE VERIFICAR: compilar y correr una vez con pocas ordenes.
+   REGLA PARA MEDIR (secc. 7): las corridas concurrentes que se comparen contra
+   la secuencial van con CantLectores = 0 (los lectores son el experimento de
+   la cache, no de la linea base).
 
-[ ] Warnings menores a limpiar (no bloquean):
-    - Orden.cs:45  -> 'Descripcion' nunca se asigna (CS8618). La propiedad esta
-      declarada pero el constructor no la setea; o se usa o se borra.
-    - Orden.cs:55  -> CS8629, calcularLatencia() hace CompletadoEn.Value sin
-      chequear null.
-    - ApisResponse.cs:7 -> 'Tecnica' non-nullable sin inicializar.
-    - SistemaConcurrente.csproj:10 -> <Folder Include="Core\Semaforos\" />
-      apunta a una carpeta que ya no existe.
+3. PERSISTENCIA SQL SERVER (secc. 4 y 6)
+   [ ] Paquete + connection string + tabla de ordenes.
+   [ ] Guardado desde el consumidor, DESACTIVABLE por configuracion (o por
+       lotes al final de la corrida): la DB dentro del camino medido domina
+       los tiempos y arruina la secc. 7.
+   [ ] El indicador de correctitud exige "procesada exactamente una vez Y
+       persistida" -> el test del punto 4 verifica contra la DB.
 
+4. TESTS AUTOMATIZADOS (secc. 5 y 6)
+   [ ] Proyecto xUnit agregado a la .sln.
+   [ ] Correctitud: N ingresadas -> N procesadas exactamente una vez, sin
+       perdidas ni duplicados, persistidas (pasa / no pasa).
+   [ ] Estres (race conditions) y corridas largas (deadlock), parametrizados
+       por variante de buffer via IBuffer.
+   [ ] Cache: lectores concurrentes de verdad, escritor excluye a todos, y
+       politica justa sin inanicion de escritores bajo carga de lectores.
 
---------------------------------------------------------------------------------
-1. BUFFER LIMITADO EN SUS DOS VARIANTES (propuesta secc. 3 y 5)
---------------------------------------------------------------------------------
-
-[OK]     Core/Buffer/IBuffer.cs
-         La interfaz comun existe (DepositarDato / RetirarDato / EstrategiaBuffer).
-
-[RESUELTO] Core/Buffer/BufferSemaforos.cs
-         Usa semaforos contadores + mutex (_vacio/_lleno + _mutexDepositar/
-         _mutexRetirar), NO passing the baton. Decision consciente, ya
-         justificada por escrito en el informe: en un buffer acotado las
-         condiciones de espera (lleno/vacio) son disjuntas y simetricas, no
-         hay guarda compuesta ni politica de prioridad que arbitrar entre
-         productores y consumidores, asi que el semaforo contador ya resuelve
-         la señalizacion condicional por si solo. PtB se aplico donde si
-         aporta valor: en la cache (CacheSemaforosJusta), que tiene que
-         decidir entre ramas y sostener una politica de prioridad.
-
-[RESUELTO] Core/Buffer/BufferMonitores.cs  <-- YA EXISTE, se hizo entero
-         Es la variante (b) de la propuesta: monitores con disciplina
-         signal-and-continue. Sin esto no hay nada que comparar y se cae el
-         punto 6 ("comparacion cualitativa entre las variantes (a) y (b)") y
-         medio punto 7.
-         Debe implementar IBuffer usando lock + Monitor.Wait/PulseAll, con:
-           - while (condicion) Monitor.Wait(...)  <- while, no if
-             (signal-and-continue obliga a reevaluar la condicion al despertar)
-           - EstrategiaBuffer => "Monitores"
-         -> Hecho y verificado con 20.000 ordenes / 8 productores / 8 consumidores
-            contra un buffer de 5: sin deadlock, sin perdidas, sin duplicados.
-            Ver soluciones.txt punto 4.
-         -> OJO: todavia NO LO USA NADIE (falta el cableado de abajo).
-
-[ ] *** LO MAS IMPORTANTE QUE QUEDA DE ESTE PUNTO ***
-    Core/Coordinadores/ConfigurationRunService.cs:18
-    El campo esta tipado como BufferSemaforos (tipo concreto) en vez de IBuffer,
-    y se instancia hardcodeado en el constructor (linea 34).
-    Mientras siga asi no se puede elegir la variante en runtime, que es
-    justamente el sentido de tener la interfaz comun.
-    -> Tiparlo IBuffer y elegir la implementacion por parametro/enum.
-    AHORA URGE MAS: ya existen BufferMonitores y CacheMonitores terminados y
-    verificados, pero no se pueden correr desde la API hasta que esto se cablee.
-    Es lo que destraba las mediciones del punto 8.
-
-
---------------------------------------------------------------------------------
-2. CACHE LECTORES/ESCRITORES (propuesta secc. 3)
---------------------------------------------------------------------------------
-
-[OK]     Core/Cache/ICache.cs, EstadoOrden.cs, ResumenCache.cs
-         Contrato bien definido y documentado.
-
-A) [OK]  Core/Cache/CacheSemaforos/CacheSemaforosJusta.cs
-         Es lo mejor hecho del proyecto. Passing the baton completo, politica
-         justa correcta (los lectores ceden si hay escritores demorados),
-         Leer / LeerResumen / Escribir los tres implementados, bien comentado.
-         Unico detalle: Leer() hace _estados[ordenId] directo, y el contrato de
-         ICache dice "Devuelve null si la orden todavia no fue registrada".
-         Con una orden no registrada tira KeyNotFoundException.
-         -> Cambiar a TryGetValue y devolver null.
-
-B) [PARCIAL] Core/Cache/CacheSemaforos/CacheSemaforos.cs (preferencia lectores)
-    [ ] LeerResumen() lanza NotImplementedException.
-        Esto NO es cosmetico: LectorCache.LeerPeriodicamente() llama justamente
-        a LeerResumen(), asi que en cuanto se use esta politica, todos los hilos
-        lectores revientan. Es la operacion que hay que medir en la comparacion
-        de politicas del punto 7.
-    [ ] Leer() hace _estados[ordenId] directo -> mismo problema de null que en (A).
-    [ ] El campo _colaLectores (linea 7) esta declarado y nunca se usa -> borrar.
-    [OK] El protocolo de lector/escritor con preferencia a lectores en si esta
-         bien (mutex sobre _lectoresActivos + _colaEscritores).
-
-C) [RESUELTO] Core/Cache/CacheMonitores/CacheMonitoresLectores.cs
-    Estaba a medio escribir y era lo que rompia el build. Se completo entero:
-    [RESUELTO] PedidoEscribir(): ahora incrementa escritoresActivos dentro del lock
-        (antes esperaba pero no marcaba nada, no daba exclusion).
-    [RESUELTO] LiberaEscribir(): decrementa escritoresActivos + Monitor.PulseAll.
-    [RESUELTO] PedidoLeer(): while (escritoresActivos > 0) Wait; lectoresActivos++.
-    [RESUELTO] LiberaLeer(): lectoresActivos--; PulseAll si fue el ultimo.
-    [RESUELTO] LeerResumen(): implementado.
-    [RESUELTO] Leer(): pasa a TryGetValue y devuelve null si no esta.
-    Se uso siempre while (no if) en los Wait -> disciplina signal-and-continue.
-    Verificado: 4 lectores + 4 escritores, 3.000 ordenes, resumen correcto.
-    La inanicion de escritores quedo MEDIDA: 166 escrituras en 2s contra 24.440
-    de la politica justa (~147x). Confirma que la politica hace lo que tiene que
-    hacer. Ver soluciones.txt puntos 3 y 6.
-    -> OJO: todavia NO LA USA NADIE (falta el cableado del punto 2.D).
-
-D) [ ] Core/Cache/PoliticasCache.cs
-    El enum declara 4 politicas (SemaforosJusta, SemaforosLectores, MonitorJusta,
-    MonitorLectores) pero:
-      - MonitorJusta no existe como clase.
-      - El enum no se usa en ningun lado: ConfigurationRunService.cs:35 tiene
-        hardcodeado  _cache = new CacheSemaforosJusta();
-    -> Decidir el alcance real (la propuesta secc. 7 solo pide comparar
-       "preferencia a lectores" vs "politica justa") y despues cablear el enum
-       a una factory para poder elegir la politica desde el endpoint.
-    -> Orden.TecnicaCache existe pero nunca se asigna.
-
-
---------------------------------------------------------------------------------
-3. CORRECTITUD - BUG GRAVE (propuesta secc. 6, "toda orden se procesa
-   exactamente una vez")
---------------------------------------------------------------------------------
-
-[RESUELTO] *** IDs DE ORDEN DUPLICADOS *** Core/Productor.cs:41-42
-
-    SE RESOLVIO con la clase nueva Core/Coordinadores/GeneradorIdsOrden.cs
-    (Interlocked.Increment, una instancia por corrida, ids 1..N).
-    Se comprobo que el bug era real: el random viejo repetia ~490 ids sobre
-    10.000 (casi 5%). Ahora: 0 repetidos con 8 hilos concurrentes.
-    Detalle completo en soluciones.txt punto 2.
-    Abajo queda el diagnostico original.
-
-        Random rand = new Random();
-        Orden orden = new Orden(rand.Next(1,100000), _buffer.EstrategiaBuffer);
-
-    El Id de cada orden es un numero AL AZAR entre 1 y 99999. No es unico.
-    Con los volumenes que pide la propuesta las colisiones son inevitables
-    (por la paradoja del cumpleanios, con 1.000 ordenes sobre 100.000 valores
-    ya se esperan colisiones; con 10.000 ordenes hay cientos).
-
-    Consecuencias directas:
-      - La cache se indexa por ordenId: dos ordenes distintas con el mismo Id
-        se pisan el estado entre si. El resumen de la cache queda mal.
-      - El test de "cada orden se procesa exactamente una vez" NO SE PUEDE
-        escribir de forma confiable, porque no hay identidad unica que contar.
-        Este es el indicador principal de la propuesta (pasa/no pasa).
-      - Cualquier medicion por-orden queda contaminada.
-
-    -> Reemplazar por un contador atomico global (Interlocked.Increment) o
-       Guid. Es un arreglo chico pero es condicion previa para el punto 4.
-    -> De paso: 'new Random()' dentro del loop es innecesario, Orden ya usa
-       Random.Shared para Monto.
-
-[ ] Orden.PoisonPill() usa Id = -1. Si en algun momento una pildora llega a
-    escribirse en la cache, mete un Id fantasma. Hoy Consumidor.cs:38 hace break
-    antes de escribir, asi que esta bien, pero conviene dejarlo asegurado cuando
-    se agregue la persistencia.
-
-
---------------------------------------------------------------------------------
-4. TESTS AUTOMATIZADOS (propuesta secc. 5 y 6)
---------------------------------------------------------------------------------
-
-[FALTA] NO EXISTE NINGUN PROYECTO DE TESTS.
-        La solucion (SistemaConcurrente.sln) tiene un solo proyecto y no hay
-        ninguna referencia a xUnit/NUnit/MSTest en todo el repo.
-        Es uno de los cuatro entregables explicitos de la propuesta y donde
-        estan los indicadores de evaluacion.
-
-[ ] Crear proyecto de tests (xUnit) y agregarlo a la .sln.
-[ ] Test de correctitud: N ordenes ingresadas -> N ordenes procesadas,
-    exactamente una vez cada una, sin perdidas ni duplicados.
-    (depende de arreglar el punto 3, IDs unicos)
-[ ] Test de estres / race conditions: muchos productores y consumidores
-    concurrentes, verificar que no se pierde ni se duplica nada.
-[ ] Test de ausencia de deadlock: corridas largas con timeout, que no se trabe.
-[ ] Correr los mismos tests contra las DOS variantes de buffer (semaforos y
-    monitores) a traves de IBuffer -> tests parametrizados por implementacion.
-[ ] Tests especificos de la cache:
-      - varios lectores pueden entrar a la vez (concurrencia real de lectura)
-      - un escritor excluye a todos
-      - politica justa: un escritor no muere de hambre bajo carga de lectores
-        (este test es el que demuestra el punto de la secc. 7)
-
-
---------------------------------------------------------------------------------
-5. PERSISTENCIA EN BASE DE DATOS (propuesta secc. 4 y 6)
---------------------------------------------------------------------------------
-
-[FALTA] NO HAY NADA DE PERSISTENCIA.
-        Sin EF Core, sin SqlClient, sin connection string en appsettings.json,
-        sin entidades ni repositorio.
-        La propuesta lo nombra en Herramientas ("una base de datos para
-        persistir las ordenes (SQL Server)") y el indicador de correctitud dice
-        "se procese exactamente una vez Y QUEDE PERSISTIDA".
-
-[ ] Decidir alcance real y, si se mantiene, agregar:
-    - paquete + connection string + tabla de ordenes
-    - guardado de la orden procesada en el Consumidor
-    - test que verifique que quedan N filas, sin duplicados
-    OJO: escribir a la DB dentro del consumidor va a dominar completamente los
-    tiempos y arruinar las mediciones de performance del punto 7. Conviene
-    poder desactivar la persistencia por configuracion, o persistir por lotes al
-    final, y medir performance con la DB apagada.
-    (Si se decide bajar el alcance y no usar DB, hay que avisar/justificarlo.)
-
-
---------------------------------------------------------------------------------
-6. SOLUCION SECUENCIAL DE REFERENCIA (propuesta secc. 7)
---------------------------------------------------------------------------------
-
-[FALTA] No existe la implementacion secuencial.
-        La secc. 7 pide comparar el tiempo total de la secuencial contra las dos
-        variantes concurrentes con 1.000 / 5.000 / 10.000 ordenes, para concluir
-        "a partir de que punto la complejidad de una solucion concurrente
-        empieza a tener sentido". Sin la secuencial no hay linea base y ese
-        analisis no se puede hacer.
-[ ] Escribir un ProcesadorSecuencial simple (generar y procesar en un solo hilo,
-    misma SimularProcesamiento y mismo CantIteraciones para que sea comparable).
-[ ] Exponerlo por endpoint para poder medirlo igual que los otros.
-
-
---------------------------------------------------------------------------------
-7. DEMO EJECUTABLE Y API (propuesta secc. 5)
---------------------------------------------------------------------------------
-
-[PARCIAL] Controllers/ApisConcurrentes.cs
-          Hay UN solo endpoint: POST /ApisConcurrentes/semaforos-cache-justa.
-          Program.cs levanta la Web API con Swagger, sirve como demo.
-[ ] Faltan los endpoints de las demas combinaciones (buffer monitores, cache
-    preferencia-lectores, secuencial). Mejor que multiplicar endpoints:
-    un unico endpoint que reciba la variante de buffer y la politica de cache
-    como parametros en ConfiguracionRun.
-[ ] ConfigurationRunService solo tiene EjecutarSemaforos(). Generalizar a un
-    Ejecutar(config) que arme buffer y cache segun la config.
-[ ] Borrar WeatherForecast.cs (scaffolding del template, no se usa).
-[ ] CalculadoraMetricas.cs:16 tira Exception con el texto "el valor e4s 0"
-    (typo). Ademas, tirar excepcion cuando no se proceso nada hace que la API
-    devuelva 500; mejor devolver un response en cero como dice el propio
-    comentario de arriba.
-
-
---------------------------------------------------------------------------------
-8. ANALISIS DE PERFORMANCE (propuesta secc. 7)
---------------------------------------------------------------------------------
-
-[OK] Utils/CalculadoraMetricas.cs ya calcula lo que pide la propuesta:
-     throughput, latencia promedio/min/max/P95, espera en buffer, tiempo total.
-     La instrumentacion de tiempos en Orden (CreadoEn / InsertadoEnBufferEn /
-     RetiradoDeBufferEn / CompletadoEn) esta bien puesta.
-
-[RESUELTO] *** PROBLEMA DE MEDICION: Console.WriteLine POR ORDEN ***
-    Productor.cs:48 y Consumidor.cs:51 imprimen una linea por cada orden, y
-    ConfigurationRunService.cs:84 y 104 imprimen por cada hilo. La consola esta
-    sincronizada internamente, asi que con 10.000 ordenes eso serializa los
-    hilos y domina el tiempo medido: NO se estaria midiendo la sincronizacion
-    sino la consola. Todos los numeros del punto 7 saldrian mal.
-    -> Sacar los prints del camino medido (o dejarlos detras de un flag
-       "verbose" apagado por defecto durante las corridas de medicion).
-    -> Idem LectorCache.cs:34.
-    RESUELTO: se comentaron los 5 prints (los 3 por orden/resumen y los 2 por
-    hilo), cada uno con una nota de por que. En LectorCache se comento SOLO el
-    print: la llamada a LeerResumen() se mantiene, que es la operacion de lector
-    que hay que ejercitar. Una corrida de 10.000 ordenes pasa de mas de 20.000
-    lineas de log a 10. Ver soluciones.txt punto 5.
-    PENDIENTE (opcional): si se quiere recuperar la salida para la demo, hacerlo
-    con un flag "verbose" en ConfiguracionRun, apagado durante las mediciones.
-
-[ ] Falta el barrido de configuraciones: variar productores, consumidores,
-    tamanio de buffer y volumen (1.000 / 5.000 / 10.000), correr cada
-    combinacion y juntar resultados.
-[ ] Falta la comparacion de politicas de cache (preferencia lectores vs justa)
-    bajo distintas proporciones de lecturas/escrituras -> depende de tener
-    LeerResumen() implementado en la de preferencia-lectores (punto 2.B) y de
-    poder elegir la politica (punto 2.D). Hay que poder variar la proporcion de
-    lecturas: hoy CantLectores y el intervalo fijo de 50ms
-    (ConfigurationRunService.cs:16) es lo unico que se puede tocar, y el
-    intervalo es una constante hardcodeada -> pasarlo a ConfiguracionRun.
-[ ] Falta armar las tablas y graficos comparativos y escribir la interpretacion.
-[ ] Conviene hacer varias corridas por combinacion y promediar, y descartar la
-    primera corrida (JIT / warm-up), sino los numeros van a saltar mucho.
-
-
---------------------------------------------------------------------------------
-9. INFORME / DOCUMENTACION
---------------------------------------------------------------------------------
-
-[ ] README.md esta VACIO (0 bytes).
-[ ] Falta la comparacion cualitativa semaforos vs monitores que pide la secc. 6:
-    cual queda mas clara, como se maneja la sincronizacion por condicion en cada
-    una, cual se mantiene mejor. Es un entregable escrito, no codigo.
-[ ] Falta el documento final con tablas, graficos y conclusiones (secc. 7).
-[ ] El repo tiene commiteados obj/ y .vs/ (archivos de build y de Visual Studio).
-    Se ve que .gitignore esta modificado sin commitear; conviene terminar de
-    limpiarlos antes de entregar.
-
-
-================================================================================
-RESUMEN - ORDEN SUGERIDO DE TRABAJO
-================================================================================
-
-YA HECHO (detalle en soluciones.txt):
-  [X] 1. Build arreglado - 0 errores, la API corre de punta a punta.
-  [X] 2. IDs de orden unicos - GeneradorIdsOrden con Interlocked, ids 1..N.
-  [X] 3. CacheMonitores terminada - lectores/escritores con monitores,
-         signal-and-continue, preferencia a lectores. Inanicion medida.
-  [X] 4. BufferMonitores - variante (b) completa, verificada con 20.000 ordenes.
-  [X] 5. Console.WriteLine fuera del camino medido.
-
-LO QUE FALTA, en este orden (cada uno destraba al siguiente):
-
-  1. *** CABLEAR LAS VARIANTES *** (puntos 1 y 2.D). Es lo primero ahora:
-     tipar Buffer como IBuffer, factory de buffer y de cache, usar el enum
-     PoliticasCache y recibir la variante por parametro en ConfiguracionRun.
-     BufferMonitores y CacheMonitores ya estan hechos y probados pero NO SE
-     PUEDEN CORRER desde la API hasta que esto exista. Sin esto no hay
-     comparacion (punto 6 de la propuesta) ni mediciones (punto 7).
-  2. Solucion secuencial (punto 6) - linea base para la comparacion.
-  3. Completar CacheSemaforos (preferencia lectores): LeerResumen sigue en
-     NotImplementedException (punto 2.B). Necesario para comparar politicas.
-  4. Persistencia SQL Server (punto 5) - decidir si entra o se justifica sacarla.
-  5. Barrido de mediciones, tablas/graficos e informe (puntos 8 y 9).
-  6. Proyecto de tests (punto 4) - se dejo para el final, como se acordo. Es un
-     entregable explicito y son los indicadores de evaluacion.
-     ATAJO: el arnes de verificacion que se uso al arreglar todo esto ya cubre
-     casi los mismos casos (no perder, no duplicar, no deadlock, ids 1..N,
-     inanicion); sirve de borrador. Ver soluciones.txt punto 6.
-
-Lo que ya esta bien y no hay que tocar:
-  - CacheSemaforosJusta (passing the baton + politica justa): completa y clara.
-  - CacheMonitores y BufferMonitores (nuevos): terminados y verificados.
-  - BufferSemaforos (semaforos contadores, sin PtB por decision ya
-    justificada en el informe: la tecnica se aplico en la cache, no aca).
-  - La interfaz ICache y el modelo de estados.
-  - CalculadoraMetricas y la instrumentacion de tiempos en Orden.
-  - El mecanismo de poison pill para cortar los consumidores.
-  - ContadorOrdenes y GeneradorIdsOrden con Interlocked.
+5. MEDICIONES E INFORME (secc. 6 y 7)
+   [ ] Barrido: productores, consumidores, tamanio de buffer, volumen
+       (1.000/5.000/10.000). Varias corridas por combinacion, promediar y
+       descartar la primera (warm-up/JIT).
+   [ ] Comparacion de politicas de cache variando la proporcion
+       lecturas/escrituras (depende del punto 1).
+   [ ] Secuencial vs concurrentes con los tres volumenes (depende del punto 2).
+   [ ] Tablas y graficos comparativos + interpretacion.
+   [ ] Comparacion cualitativa semaforos vs monitores (secc. 6; entregable
+       escrito, no codigo).
+   [ ] README (esta vacio) y limpiar obj/ y .vs/ commiteados.
 ================================================================================

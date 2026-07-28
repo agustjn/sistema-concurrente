@@ -14,7 +14,7 @@ namespace SistemaConcurrente.Core.Coordinadores
         private int TamanioBuffer;
         private int CantIteraciones;
         // Intervalo (ms) entre lecturas de cada hilo lector de la cache.
-        private const int IntervaloLecturaMs = 50;
+        private int _intervaloEnMsDeLecturas;
         // Manera de manejar el indice/clave/id de cada productor/consumidor, ya que en el generarConsumidor del Thread(...) no se puede enviar el indice como parametro
         private readonly IBuffer _buffer;
         // Cache compartida del estado de las ordenes (lectores/escritores, passing the baton, justa).
@@ -25,9 +25,11 @@ namespace SistemaConcurrente.Core.Coordinadores
         private readonly GeneradorIdsOrden _generadorIds;
         // Bolsa compartida donde los consumidores acumulan las ordenes reales completadas, para calcular metricas
         private readonly ConcurrentBag<Orden> _ordenesCompletadas = new();
+        
 
 
-        public ConfigurationRunService(int cantProductores, int cantConsumidores, int cantIteraciones, int totalOrdenes, int cantLectores, ICache cache, IBuffer buffer)
+
+        public ConfigurationRunService(int cantProductores, int cantConsumidores, int cantIteraciones, int totalOrdenes, int cantLectores, ICache cache, IBuffer buffer, int intervaloMsDeLecturas)
         {
             CantConsumidores = cantConsumidores;
             CantProductores = cantProductores;
@@ -37,6 +39,7 @@ namespace SistemaConcurrente.Core.Coordinadores
             _cache = cache;
             _contadorOrdenes = new ContadorOrdenes(totalOrdenes);
             _generadorIds = new GeneradorIdsOrden();
+            _intervaloEnMsDeLecturas = intervaloMsDeLecturas;
         }
 
         public async Task<ResultadoEjecucion> Ejecutar()
@@ -129,7 +132,7 @@ namespace SistemaConcurrente.Core.Coordinadores
             {
                 Thread nuevoHilo = new Thread(() =>
                 {
-                    LectorCache lector = new LectorCache(i, "Lector #" + i.ToString(), _cache, IntervaloLecturaMs);
+                    LectorCache lector = new LectorCache(i, "Lector #" + i.ToString(), _cache, _intervaloEnMsDeLecturas);
                     lector.LeerPeriodicamente(token);
                 });
 

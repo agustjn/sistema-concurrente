@@ -1,6 +1,5 @@
 using SistemaConcurrente.Core;
 using SistemaConcurrente.DTOs;
-using System.Drawing;
 
 namespace SistemaConcurrente.Utils
 {
@@ -11,10 +10,11 @@ namespace SistemaConcurrente.Utils
         {
             int n = ordenes.Count;
 
-            // Si no se proceso nada, devolvemos un response en cero (evita dividir por 0 / promedios sobre vacio).
+            // Si no se proceso nada, devolvemos un response en cero (evita dividir por 0 / promedios
+            // sobre vacio, y no convierte una corrida vacia en un 500 de la API).
             if (n == 0)
-                throw new Exception("No se procesó ninguna orden, el valor e4s 0");
-            
+                return new ApisResponse { Tecnica = tecnica };
+
 
             // Latencia extremo a extremo (CreadoEn -> CompletadoEn)
             var latencias = ordenes
@@ -22,13 +22,21 @@ namespace SistemaConcurrente.Utils
                 .OrderBy(latenciaMs => latenciaMs)
                 .ToList();
 
-            // Tiempo de espera en el buffer: InsertadoEnBufferEn -> RetiradoDeBufferEn
-            double esperaBufferProm = ordenes
-                .Average(o => (o.RetiradoDeBufferEn!.Value - o.InsertadoEnBufferEn!.Value).TotalMilliseconds);
+            // Espera en buffer (InsertadoEnBufferEn -> RetiradoDeBufferEn): solo aplica si la
+            // corrida paso por un buffer. En la secuencial esos timestamps son null y la metrica
+            // no corresponde: queda null ("la pregunta no aplica"), no cero ("espero 0 ms").
+            bool huboBuffer = ordenes[0].InsertadoEnBufferEn.HasValue && ordenes[0].RetiradoDeBufferEn.HasValue;
 
-            // Tiempo de procesamiento del consumidor: RetiradoDeBufferEn -> CompletadoEn
-            double procesamientoProm = ordenes
-                .Average(o => (o.CompletadoEn!.Value - o.RetiradoDeBufferEn!.Value).TotalMilliseconds);
+            double? esperaBufferProm = huboBuffer
+                ? ordenes.Average(o => (o.RetiradoDeBufferEn!.Value - o.InsertadoEnBufferEn!.Value).TotalMilliseconds)
+                : null;
+
+            // Tiempo de procesamiento: en el concurrente es RetiradoDeBufferEn -> CompletadoEn
+            // (lo que trabajo el consumidor); en el secuencial no hay retiro, asi que es
+            // CreadoEn -> CompletadoEn (la orden entera, sus dos simulaciones).
+            double procesamientoProm = huboBuffer
+                ? ordenes.Average(o => (o.CompletadoEn!.Value - o.RetiradoDeBufferEn!.Value).TotalMilliseconds)
+                : ordenes.Average(o => (o.CompletadoEn!.Value - o.CreadoEn).TotalMilliseconds);
 
             return new ApisResponse
             {

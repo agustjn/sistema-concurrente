@@ -4,7 +4,9 @@
     {
         private readonly object _monitor = new object();
         private readonly Dictionary<int, EstadoOrden> _estados = new();
-        private int escritoresDemorados, escritoresActivos, lectoresDemorados, lectoresActivos = 0;
+        // No hace falta contar lectoresDemorados: con PulseAll todos rechequean su guarda,
+        // y ninguna condicion consulta cuantos lectores esperan (si escritoresDemorados: es la guarda de los lectores).
+        private int escritoresDemorados, escritoresActivos, lectoresActivos = 0;
 
         public void Escribir(int ordenId, EstadoOrden estado)
         {
@@ -48,11 +50,9 @@
         {
             lock (_monitor)
             {
-                lectoresDemorados++;
                 while (escritoresActivos > 0 || escritoresDemorados > 0)
                     Monitor.Wait(_monitor);
 
-                lectoresDemorados--;
                 lectoresActivos++;
             }
         }
@@ -71,7 +71,23 @@
 
         public ResumenCache LeerResumen()
         {
-            throw new NotImplementedException();
+            this.PedidoLeer();
+
+            // ---------- seccion de lectura (CONCURRENTE entre lectores) ----------
+            int generadas = 0, enProceso = 0, finalizadas = 0;
+            foreach (var estado in _estados.Values)
+            {
+                switch (estado)
+                {
+                    case EstadoOrden.Generada: generadas++; break;
+                    case EstadoOrden.EnProceso: enProceso++; break;
+                    case EstadoOrden.Finalizada: finalizadas++; break;
+                }
+            }
+            // ---------------------------------------------------------------------
+
+            this.LiberaLeer();
+            return new ResumenCache(generadas, enProceso, finalizadas);
         }
     }
 }
