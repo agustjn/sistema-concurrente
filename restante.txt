@@ -40,17 +40,18 @@ LO QUE FALTA, EN ESTE ORDEN (cada punto destraba el siguiente)
        CacheSemaforos -> ahora TryGetValue + null, como pide ICache.
    [RESUELTO] Etiquetas de tecnica cruzadas en ApisConcurrentes -> ahora
        SemaforosSinPrioridad y MonitoresJusta.
-   [ ] IntervaloLecturaMs hardcodeado (50ms, const) en ConfigurationRunService
-       -> pasarlo a ConfiguracionRun; es la perilla para variar la proporcion
-       lecturas/escrituras que pide la secc. 7.
+   [RESUELTO] intervaloMsDeLecturas ahora viaja en ConfiguracionRun y llega a
+       cada LectorCache: es la perilla de proporcion lecturas/escrituras.
+       Detalle pendiente menor: default (hoy si no se manda vale 0 = lectores
+       sin pausa; que sea deliberado), PascalCase, comentario "Rango entre:".
    [RESUELTO] Menores: comentario suelto del controller, _colaLectores,
        lectoresDemorados, throw->response en cero en CalculadoraMetricas,
        Folder fantasma Core\Semaforos\ en el .csproj. WeatherForecast.cs ya
        estaba borrado.
-   [ ] Enum PoliticasCache: lo referencia Orden.TecnicaCache pero nunca se
-       asigna -> decidir si se asigna en el Productor o se borra de ambos lados.
-   [ ] OJO: hay un stub de proceso-secuencial en el controller sin firma de
-       metodo -> NO COMPILA hasta completarlo o comentarlo (es del punto 2).
+   [RESUELTO] Enum PoliticasCache y Orden.TecnicaCache: eliminados ambos.
+   [RESUELTO] El stub de proceso-secuencial se completo (ver punto 2): el
+       build queda destrabado.
+   >>> PUNTO 1 CERRADO (salvo el detalle del default del intervalo). <<<
 
 2. SOLUCION SECUENCIAL (secc. 7)
    [RESUELTO] Core/ProcesadorSecuencial.cs: un solo hilo, DOS simulaciones por
@@ -63,6 +64,9 @@ LO QUE FALTA, EN ESTE ORDEN (cada punto destraba el siguiente)
    REGLA PARA MEDIR (secc. 7): las corridas concurrentes que se comparen contra
    la secuencial van con CantLectores = 0 (los lectores son el experimento de
    la cache, no de la linea base).
+
+>>> PROXIMA SESION: verificar build + corrida de humo del secuencial (100
+    ordenes, iteraciones bajas), y arrancar el punto 3 (SQL Server). <<<
 
 3. PERSISTENCIA SQL SERVER (secc. 4 y 6)
    [ ] Paquete + connection string + tabla de ordenes.
