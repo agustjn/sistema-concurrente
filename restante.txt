@@ -70,7 +70,9 @@ LO QUE FALTA, EN ESTE ORDEN (cada punto destraba el siguiente)
 
 >>> PROXIMA SESION: en la maquina de Agu: dotnet build + humo del secuencial
     (100 ordenes, iteraciones bajas) + una corrida concurrente verificando que
-    la tabla Ordenes quede con las N filas. Despues, punto 4 (tests). <<<
+    la tabla Ordenes quede con las N filas. El punto 4 (tests) ya esta escrito
+    (2026-07-30): correr dotnet test --filter "Categoria!=Estres" primero
+    (correctitud, rapido) y despues la bateria completa. <<<
 
 3. PERSISTENCIA SQL SERVER (secc. 4 y 6)
    [RESUELTO] EF Core (Microsoft.EntityFrameworkCore.SqlServer 8.0.11) contra
@@ -93,13 +95,34 @@ LO QUE FALTA, EN ESTE ORDEN (cada punto destraba el siguiente)
        instancia es nombrada -> localhost\SQLEXPRESS).
 
 4. TESTS AUTOMATIZADOS (secc. 5 y 6)
-   [ ] Proyecto xUnit agregado a la .sln.
-   [ ] Correctitud: N ingresadas -> N procesadas exactamente una vez, sin
-       perdidas ni duplicados, persistidas (pasa / no pasa).
-   [ ] Estres (race conditions) y corridas largas (deadlock), parametrizados
-       por variante de buffer via IBuffer.
-   [ ] Cache: lectores concurrentes de verdad, escritor excluye a todos, y
-       politica justa sin inanicion de escritores bajo carga de lectores.
+   DECISION DE ALCANCE (Agu, 2026-07-30): la propuesta pide exactamente tres
+   tests (correctitud+persistida, estres sin races, corridas largas sin
+   deadlock). Los tests de cache (lectores concurrentes, exclusion, inanicion)
+   NO se hacen: no son requisito; la cache se evalua como analisis de
+   performance en el punto 5 (secc. 7).
+   [RESUELTO] Proyecto SistemaConcurrente.Tests (xUnit) agregado a la .sln.
+       Fixtures/Variantes.cs: las 4 combinaciones buffer x cache de la API como
+       fabricas (VarianteRun); un mismo [Theory] corre contra todas via
+       IBuffer/ICache. Corridas.Ejecutar va directo a ConfigurationRunService
+       (sin HTTP). VerificarExactamenteUnaVez: N completadas con exactamente
+       los Ids 1..N (cubre perdidas y duplicados a la vez).
+   [RESUELTO] CorrectitudTests (pasa/no pasa, secc. 6): corrida + verificacion
+       en memoria + mismo flujo del endpoint (Limpiar/GuardarCorrida) +
+       verificacion CONTRA LA TABLA. Decision de Agu: siempre contra la DB,
+       sin skip. Fixtures/BaseDeDatosFixture: misma instancia Express pero
+       base separada SistemaConcurrenteTests, para no pisar la ultima corrida
+       de la base real.
+   [RESUELTO] EstresTests: buffer=1 con P>>C y C>>P, y volumen alto con
+       iteraciones bajas; 5 repeticiones por caso (las races son
+       probabilisticas). Trait Categoria=Estres para excluir del ciclo rapido:
+       dotnet test --filter "Categoria!=Estres".
+   [RESUELTO] DeadlockTests: corrida larga (30.000 ordenes, buffer=2, 8+8
+       hilos) con timeout de 120s como detector (un deadlock no tira
+       excepcion: la corrida no termina).
+   PENDIENTE DE VERIFICAR: dotnet test en la maquina de Agu (en la sesion del
+       2026-07-30 no habia SDK disponible; el codigo quedo sin compilar). Si
+       la instancia SQL cambio de nombre, ajustar ConnectionString en
+       BaseDeDatosFixture.
 
 5. MEDICIONES E INFORME (secc. 6 y 7)
    [ ] Barrido: productores, consumidores, tamanio de buffer, volumen

@@ -49,7 +49,7 @@ namespace SistemaConcurrente.Controllers
             ICache cache = new CacheSemaforosJusta();
             IBuffer buffer = new BufferSemaforos(parametros.CapacidadBuffer);
 
-            ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CantIteraciones, parametros.CantOrdenes, parametros.CantLectores, cache, buffer, parametros.intervaloMsDeLecturas);
+            ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CantIteraciones, parametros.CantOrdenes, parametros.CantLectores, cache, buffer, parametros.IntervaloMsDeLecturas);
 
             ResultadoEjecucion resultado = await service.Ejecutar();
 
@@ -69,7 +69,7 @@ namespace SistemaConcurrente.Controllers
             ICache cache = new CacheSemaforosLectores();
             IBuffer buffer = new BufferSemaforos(parametros.CapacidadBuffer);
 
-            ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CantIteraciones, parametros.CantOrdenes, parametros.CantLectores, cache, buffer, parametros.intervaloMsDeLecturas);
+            ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CantIteraciones, parametros.CantOrdenes, parametros.CantLectores, cache, buffer, parametros.IntervaloMsDeLecturas);
 
             ResultadoEjecucion resultado = await service.Ejecutar();
 
@@ -88,7 +88,7 @@ namespace SistemaConcurrente.Controllers
             ICache cache = new CacheMonitoresLectores();
             IBuffer buffer = new BufferMonitores(parametros.CapacidadBuffer);
 
-            ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CantIteraciones, parametros.CantOrdenes, parametros.CantLectores, cache, buffer, parametros.intervaloMsDeLecturas);
+            ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CantIteraciones, parametros.CantOrdenes, parametros.CantLectores, cache, buffer, parametros.IntervaloMsDeLecturas);
 
             ResultadoEjecucion resultado = await service.Ejecutar();
 
@@ -106,7 +106,7 @@ namespace SistemaConcurrente.Controllers
             ICache cache = new CacheMonitoresJusta();
             IBuffer buffer = new BufferMonitores(parametros.CapacidadBuffer);
 
-            ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CantIteraciones, parametros.CantOrdenes, parametros.CantLectores, cache, buffer, parametros.intervaloMsDeLecturas);
+            ConfigurationRunService service = new ConfigurationRunService(parametros.CantProductores, parametros.CantConsumidores, parametros.CantIteraciones, parametros.CantOrdenes, parametros.CantLectores, cache, buffer, parametros.IntervaloMsDeLecturas);
 
             ResultadoEjecucion resultado = await service.Ejecutar();
 

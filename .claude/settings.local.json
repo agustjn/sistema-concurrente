@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://localhost:5144 dotnet run --no-launch-profile --no-build)",
+      "Bash(curl -s -o /dev/null http://localhost:5144/swagger/index.html)",
+      "Bash(curl -s -X POST http://localhost:5144/ApisConcurrentes/semaforos-cache-justa -H \"Content-Type: application/json\" -d '{\"CapacidadBuffer\":10,\"CantOrdenes\":1000,\"CantConsumidores\":4,\"CantProductores\":4,\"CantLectores\":2,\"CantIteraciones\":200}')",
+      "Bash(curl -s -X POST http://localhost:5144/ApisConcurrentes/semaforos-cache-justa -H \"Content-Type: application/json\" -d '{\"CapacidadBuffer\":50,\"CantOrdenes\":10000,\"CantConsumidores\":4,\"CantProductores\":4,\"CantLectores\":2,\"CantIteraciones\":500}')",
+      "Bash(dotnet add *)"
+    ]
+  }
+}

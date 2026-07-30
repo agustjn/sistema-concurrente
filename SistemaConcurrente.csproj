@@ -11,4 +11,13 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
+  <!-- La carpeta de tests vive adentro de la carpeta de este proyecto, y un csproj estilo SDK
+       compila por defecto TODOS los .cs que cuelgan de el. Sin este Remove, este proyecto
+       intentaria compilar los tests sin tener xUnit ("Assert no existe en el contexto actual"). -->
+  <ItemGroup>
+    <Compile Remove="SistemaConcurrente.Tests\**" />
+    <Content Remove="SistemaConcurrente.Tests\**" />
+    <None Remove="SistemaConcurrente.Tests\**" />
+  </ItemGroup>
+
 </Project>
