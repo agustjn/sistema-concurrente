@@ -314,3 +314,74 @@ MODIFICADOS:
   Core/Coordinadores/ConfigurationRunService.cs   using que faltaba; crea y pasa el
                                              generador de ids; prints comentados
 ================================================================================
+
+
+================================================================================
+SESION 2026-07-29 - PERSISTENCIA SQL SERVER (punto 3 del restante)
+================================================================================
+
+DECISIONES (de Agu):
+  - EF Core + SQL Server Express local.
+  - SIN runId ni tabla de corridas: cada endpoint LIMPIA la tabla al inicio y
+    GUARDA siempre al final. La tabla contiene solo la ultima corrida; las
+    corridas de distintos endpoints no se mezclan porque nunca conviven.
+  - El guardado va al final de todo el proceso para que la DB no intervenga
+    en las mediciones (secc. 7): Limpiar() y GuardarCorrida() corren en el
+    controller, FUERA del Stopwatch (que vive dentro de Ejecutar()).
+  - Clase espejo OrdenPersistencia (tabla "Orden" en la DB) en vez de mapear
+    Orden directo. Razon: EF exigiria constructor vacio, setters publicos en
+    Id/Monto/CreadoEn (hoy init/get-only) e Ignore sobre esFin/Descripcion/
+    PoisonPill. El acoplamiento no es temporal (el guardado es post-corrida)
+    sino de definicion: esos relajamientos regirian tambien durante la
+    corrida, y la inmutabilidad de los campos compartidos entre hilos es
+    evidencia de disenio para el informe. Orden queda intacta.
+
+COMO QUEDO:
+  - "Persistida exactamente una vez" (indicador de la propuesta) lo garantiza
+    la DB: PK = OrdenId sin identity (ValueGeneratedNever); con la tabla
+    limpia al inicio, un insert duplicado revienta. El test del punto 4
+    verifica contra esto.
+  - Limpiar() usa ExecuteDelete (un solo DELETE, sin cargar filas).
+    GuardarCorrida() hace AddRange + UN SaveChanges (inserts batcheados).
+    Metodos sincronicos a proposito: corren en el hilo del request cuando ya
+    no hay hilos de la corrida vivos (todos los Join pasaron), asi que no hay
+    concurrencia sobre el DbContext.
+  - Tabla creada con EnsureCreated() al arrancar (sin migrations, alcanza
+    para el TP).
+  - ApisResponse.RunId eliminado: sin runId quedaba sin uso.
+
+RENOMBRE DE POLITICA (pedido de Agu, misma sesion): "SinPrioridad" era
+incorrecto; esas caches SI tienen politica: preferencia a lectores (lectores
+concurrentes entre si, escritores postergables), como la nombra la propuesta
+en la secc. 7. Quedo:
+  - Rutas:    semaforos-cache-preferencia-lectores /
+              monitores-cache-preferencia-lectores
+  - Metodos:  SemaforosCachePreferenciaLectores /
+              MonitoresCachePreferenciaLectores
+  - Etiquetas de tecnica: SemaforosPreferenciaLectores /
+              MonitoresPreferenciaLectores
+  Ademas se renombro la clase CacheSemaforos -> CacheSemaforosLectores
+  (archivo incluido), simetrica de CacheMonitoresLectores que ya llevaba el
+  nombre bien. El namespace/carpeta CacheSemaforos se mantiene (agrupa a las
+  dos variantes de semaforos); de paso la clase deja de llamarse igual que su
+  namespace, que era una molestia latente.
+
+NUEVOS:
+  Core/Persistencia/OrdenPersistencia.cs     la fila de la tabla Orden
+  Core/Persistencia/OrdenesDbContext.cs      EF Core; PK sin identity
+  Core/Persistencia/PersistenciaOrdenes.cs   Limpiar() + GuardarCorrida()
+
+MODIFICADOS:
+  Controllers/ApisConcurrentes.cs   inyecta PersistenciaOrdenes; los 5 endpoints
+                                    hacen Limpiar() al inicio y GuardarCorrida()
+                                    al final
+  Program.cs                        AddDbContext + AddScoped + EnsureCreated
+  appsettings.json                  connection string (Server=localhost; si la
+                                    instancia es nombrada -> localhost\SQLEXPRESS)
+  SistemaConcurrente.csproj         Microsoft.EntityFrameworkCore.SqlServer 8.0.11
+  DTOs/ApisResponse.cs              RunId eliminado
+
+PENDIENTE DE VERIFICAR (en la maquina de Agu; el sandbox no tiene dotnet/nuget):
+  dotnet build + humo del secuencial + corrida concurrente chequeando
+  SELECT COUNT(*) FROM Orden = N.
+================================================================================

@@ -2,8 +2,6 @@
 {
     public record ApisResponse
     {
-        
-        public int RunId { get; set; }
         public string Tecnica { get; set; }
         //public required ConfiguracionRun Configuracion { get; init; }
         public int OrdenesProcesadas { get; set; }

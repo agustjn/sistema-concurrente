@@ -1,6 +1,6 @@
 ﻿namespace SistemaConcurrente.Core.Cache.CacheSemaforos
 {
-    public class CacheSemaforos : ICache
+    public class CacheSemaforosLectores : ICache
     {
         private readonly Dictionary<int, EstadoOrden> _estados = new();
 

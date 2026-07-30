@@ -73,7 +73,7 @@
         {
             this.PedidoLeer();
 
-            // ---------- seccion de lectura (CONCURRENTE entre lectores) ----------
+            // seccion de lectura (CONCURRENTE entre lectores)
             int generadas = 0, enProceso = 0, finalizadas = 0;
             foreach (var estado in _estados.Values)
             {
@@ -84,7 +84,7 @@
                     case EstadoOrden.Finalizada: finalizadas++; break;
                 }
             }
-            // ---------------------------------------------------------------------
+            
 
             this.LiberaLeer();
             return new ResumenCache(generadas, enProceso, finalizadas);

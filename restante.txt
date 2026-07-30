@@ -38,8 +38,11 @@ LO QUE FALTA, EN ESTE ORDEN (cada punto destraba el siguiente)
        de lector a EntrarComoLector/SalirComoLector, compartido con Leer().
    [RESUELTO] Leer() con _estados[ordenId] directo en CacheSemaforosJusta y
        CacheSemaforos -> ahora TryGetValue + null, como pide ICache.
-   [RESUELTO] Etiquetas de tecnica cruzadas en ApisConcurrentes -> ahora
-       SemaforosSinPrioridad y MonitoresJusta.
+   [RESUELTO] Etiquetas de tecnica cruzadas en ApisConcurrentes -> corregidas.
+       Ademas (2026-07-29) "SinPrioridad" se renombro a "PreferenciaLectores"
+       en rutas, metodos y etiquetas: el nombre correcto de la politica segun
+       la propuesta (secc. 7) es "preferencia a lectores", que es lo que estas
+       caches implementan (lectores concurrentes, escritores postergables).
    [RESUELTO] intervaloMsDeLecturas ahora viaja en ConfiguracionRun y llega a
        cada LectorCache: es la perilla de proporcion lecturas/escrituras.
        Detalle pendiente menor: default (hoy si no se manda vale 0 = lectores
@@ -65,16 +68,29 @@ LO QUE FALTA, EN ESTE ORDEN (cada punto destraba el siguiente)
    la secuencial van con CantLectores = 0 (los lectores son el experimento de
    la cache, no de la linea base).
 
->>> PROXIMA SESION: verificar build + corrida de humo del secuencial (100
-    ordenes, iteraciones bajas), y arrancar el punto 3 (SQL Server). <<<
+>>> PROXIMA SESION: en la maquina de Agu: dotnet build + humo del secuencial
+    (100 ordenes, iteraciones bajas) + una corrida concurrente verificando que
+    la tabla Ordenes quede con las N filas. Despues, punto 4 (tests). <<<
 
 3. PERSISTENCIA SQL SERVER (secc. 4 y 6)
-   [ ] Paquete + connection string + tabla de ordenes.
-   [ ] Guardado desde el consumidor, DESACTIVABLE por configuracion (o por
-       lotes al final de la corrida): la DB dentro del camino medido domina
-       los tiempos y arruina la secc. 7.
-   [ ] El indicador de correctitud exige "procesada exactamente una vez Y
-       persistida" -> el test del punto 4 verifica contra la DB.
+   [RESUELTO] EF Core (Microsoft.EntityFrameworkCore.SqlServer 8.0.11) contra
+       SQL Server Express local. Core/Persistencia/: OrdenPersistencia (clase
+       espejo; la tabla en la DB se llama Orden), OrdenesDbContext
+       (EnsureCreated al arrancar, sin migrations) y PersistenciaOrdenes.
+       Orden NO se toca: la clase del pipeline conserva sus init/get-only
+       (inmutabilidad entre hilos) y no depende de EF.
+   [RESUELTO] Decision de Agu (2026-07-29): SIN runId. Cada endpoint Limpiar()
+       al inicio (borra la corrida anterior) y GuardarCorrida() al final,
+       siempre. La tabla contiene solo la ultima corrida. Ambas llamadas
+       quedan FUERA del Stopwatch (que vive dentro de Ejecutar()): la DB no
+       interviene en las mediciones de la secc. 7.
+   [RESUELTO] "Persistida exactamente una vez": PK = OrdenId sin identity
+       (ValueGeneratedNever); un duplicado revienta el insert. El test del
+       punto 4 verifica contra la DB.
+   [RESUELTO] ApisResponse.RunId eliminado (quedaba sin uso con este esquema).
+   PENDIENTE DE VERIFICAR: build + corrida real contra el Express local
+       (connection string en appsettings.json: Server=localhost; si la
+       instancia es nombrada -> localhost\SQLEXPRESS).
 
 4. TESTS AUTOMATIZADOS (secc. 5 y 6)
    [ ] Proyecto xUnit agregado a la .sln.

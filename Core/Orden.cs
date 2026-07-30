@@ -7,8 +7,7 @@ namespace SistemaConcurrente.Core
     {
         public int Id { get; init; }
 
-        
-        public string Descripcion { get;  }
+        public string Descripcion { get; }
 
         // Valor generado random para luego simular el computo pesado
         public double Monto { get; init; }

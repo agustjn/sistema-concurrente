@@ -96,7 +96,7 @@ sincronizacion:
     EstadoOrden.cs                     Generada -> EnProceso -> Finalizada
     ResumenCache.cs                    snapshot: conteo por estado
     PoliticasCache.cs                  enum de politicas (hoy sin cablear)
-    CacheSemaforos/CacheSemaforos.cs      semaforos, preferencia a lectores
+    CacheSemaforos/CacheSemaforosLectores.cs  semaforos, preferencia a lectores
     CacheSemaforos/CacheSemaforosJusta.cs semaforos, passing the baton, justa
     CacheMonitores/CacheMonitoresLectores.cs  monitores, preferencia a lectores
 
@@ -241,7 +241,7 @@ LA REGLA: N lectores a la vez, o 1 escritor solo. Nunca mezclados.
 
   --- LAS TRES IMPLEMENTACIONES ---
 
-  CacheSemaforos (semaforos, preferencia a lectores)
+  CacheSemaforosLectores (semaforos, preferencia a lectores)
       El clasico: un mutex sobre el contador de lectores, y el PRIMER lector que
       entra toma _colaEscritores, el ULTIMO que sale lo suelta. O sea, los lectores
       "como grupo" se comportan como un solo escritor frente a los escritores.
