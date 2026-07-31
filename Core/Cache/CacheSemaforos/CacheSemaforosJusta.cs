@@ -21,33 +21,32 @@ namespace SistemaConcurrente.Core.Cache.CacheSemaforos
 
         public void Escribir(int ordenId, EstadoOrden estado)
         {
-            _entrada.Wait();                                  // P(e): tomo el testigo
-            // Me demoro si hay alguien usando la cache (lectores o un escritor).
+            _entrada.Wait();                                  
+            
             if (lectoresActivos > 0 || escritoresActivos > 0)
             {
                 escritoresDemorados++;
-                _entrada.Release();                           // suelto el testigo antes de dormir
-                _colaEscritores.Wait();                       // P(w): duermo; despierto CON el testigo
+                _entrada.Release();                           
+                _colaEscritores.Wait();                       
             }
             escritoresActivos++;
-            // Con un escritor activo nadie mas puede entrar: este SIGNAL terminara liberando la
-            // entrada (no hay a quien pasarle el testigo todavia).
+            
             Signal();
 
-            // ---------- seccion critica de escritura (EXCLUSIVA) ----------
+            // seccion critica
             _estados[ordenId] = estado;
-            // --------------------------------------------------------------
 
-            _entrada.Wait();                                  // P(e): retomo el testigo para salir
+
+            _entrada.Wait();                                  
             escritoresActivos--;
-            Signal();                                 // paso el testigo al proximo (lector o escritor)
+            Signal();                                 
         }
 
         public EstadoOrden? Leer(int ordenId)
         {
             EntrarComoLector();
 
-           
+            // seccion critica
             EstadoOrden? resultado = _estados.TryGetValue(ordenId, out var encontrado) ? encontrado : null;
 
             SalirComoLector();
@@ -93,16 +92,16 @@ namespace SistemaConcurrente.Core.Cache.CacheSemaforos
             if (escritoresActivos == 0 && escritoresDemorados == 0 && lectoresDemorados > 0)
             {
                 lectoresDemorados--;
-                _colaLectores.Release();      // baton a un lector demorado
+                _colaLectores.Release();      
             }
             else if (lectoresActivos == 0 && escritoresActivos == 0 && escritoresDemorados > 0)
             {
                 escritoresDemorados--;
-                _colaEscritores.Release();    // baton a un escritor demorado
+                _colaEscritores.Release();    
             }
             else
             {
-                _entrada.Release();           // nadie puede avanzar: se suelta el testigo
+                _entrada.Release();           
             }
         }
 
