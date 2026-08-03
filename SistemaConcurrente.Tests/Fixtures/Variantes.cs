@@ -79,7 +79,7 @@ namespace SistemaConcurrente.Tests.Fixtures
         {
             // COMPROBACION 1: no se PERDIO ninguna orden. Se pidieron N y la bolsa de
             // completadas tiene que tener exactamente N. Si un consumidor pisara una
-            // orden de otro, o una orden quedara colgada en el buffer, aca da distinto.
+            // orden de otro, o una orden quedara colgada en el buffer, aca da distinto
             Assert.Equal(n, resultado.Ordenes.Count);
 
             // COMPROBACION 2: sin perdidas NI DUPLICADOS, las dos a la vez. GeneradorIdsOrden

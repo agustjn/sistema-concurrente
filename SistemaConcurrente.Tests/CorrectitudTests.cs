@@ -4,10 +4,7 @@ using Xunit;
 
 namespace SistemaConcurrente.Tests
 {
-    // EL test pasa/no pasa de la propuesta (secc. 5 y 6): "que toda orden ingresada se
-    // procese exactamente una vez y quede persistida (lo verifica un test, da pasa o no
-    // pasa)".
-    //
+    
     // Un solo test por combinacion buffer x cache: corre la corrida, verifica
     // exactamente-una-vez en memoria, repite el flujo de persistencia del endpoint
     // (Limpiar + GuardarCorrida) y despues verifica CONTRA LA TABLA, no contra lo que el
@@ -27,11 +24,11 @@ namespace SistemaConcurrente.Tests
         public async Task Procesamiento_Unico_Y_Persistencia(VarianteRun variante)
         {
             // Config chica y balanceada
-            const int N = 500;
+            const int N = 500; 
 
             var resultado = await Corridas.Ejecutar(
                 variante, ordenes: N, productores: 3, consumidores: 3,
-                capacidadBuffer: 10, iteraciones: 100);
+                capacidadBuffer: 10, iteraciones: 100, 10, 10);
 
             // PARTE 1 - "se procesa exactamente una vez": las tres comprobaciones estan en
             // Corridas.VerificarExactamenteUnaVez (N completadas, Ids exactamente 1..N,
