@@ -15,8 +15,8 @@ namespace SistemaConcurrente.Tests.Fixtures
     public class BaseDeDatosFixture
     {
         public const string ConnectionString =
-            "Server=DESKTOP-4ATKEAP\\SQLEXPRESS;Database=SistemaConcurrenteTests;Trusted_Connection=True;TrustServerCertificate=True";
-        //"Server=SI-DESARROLLO45\\SQLEXPRESS;Database=SistemaConcurrenteTests;Trusted_Connection=True;TrustServerCertificate=True";
+        //"Server=DESKTOP-4ATKEAP\\SQLEXPRESS;Database=SistemaConcurrenteTests;Trusted_Connection=True;TrustServerCertificate=True";
+        "Server=SI-DESARROLLO45\\SQLEXPRESS;Database=SistemaConcurrenteTests;Trusted_Connection=True;TrustServerCertificate=True";
 
         // Las opciones se arman UNA vez y se comparten: lo que no se comparte es el
         // DbContext (ver CrearContexto).
