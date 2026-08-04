@@ -4,8 +4,6 @@
     {
         private readonly object _monitor = new object();
         private readonly Dictionary<int, EstadoOrden> _estados = new();
-        // No hace falta contar lectoresDemorados: con PulseAll todos rechequean su guarda,
-        // y ninguna condicion consulta cuantos lectores esperan (si escritoresDemorados: es la guarda de los lectores).
         private int escritoresDemorados, escritoresActivos, lectoresActivos = 0;
 
         public void Escribir(int ordenId, EstadoOrden estado)

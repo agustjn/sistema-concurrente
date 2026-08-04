@@ -15,20 +15,14 @@ namespace SistemaConcurrente.Controllers
     [Route("[controller]")]
     public class ApisConcurrentes : ControllerBase
     {
-        // Guardado en SQL Server, siempre FUERA del camino medido: el Stopwatch vive
-        // dentro de Ejecutar(), asi que Limpiar() (antes) y GuardarCorrida() (despues)
-        // no intervienen en las mediciones de la secc. 7. Cada endpoint limpia la tabla
-        // al inicio y persiste su corrida al final: la tabla contiene siempre la ultima
-        // corrida, sin mezclar endpoints.
         private readonly PersistenciaOrdenes _persistencia;
-
         public ApisConcurrentes(PersistenciaOrdenes persistencia)
         {
             _persistencia = persistencia;
         }
 
         [HttpPost("proceso-secuencial")]
-        public ApisResponse ProcesoSecuencial([FromBody] ConfiguracionRun parametros)
+        public ApisResponse ProcesoSecuencial([FromBody] ConfiguracionSecuencial parametros)
         {
             _persistencia.Limpiar();
 
