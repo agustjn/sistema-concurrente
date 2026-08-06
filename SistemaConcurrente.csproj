@@ -20,4 +20,12 @@
     <None Remove="SistemaConcurrente.Tests\**" />
   </ItemGroup>
 
+  <!-- Mismo motivo que arriba: Mediciones\Harness tiene su propio Program.cs (el harness
+       de la secc. 7); sin este Remove habria dos Main y clases duplicadas. -->
+  <ItemGroup>
+    <Compile Remove="Mediciones\**" />
+    <Content Remove="Mediciones\**" />
+    <None Remove="Mediciones\**" />
+  </ItemGroup>
+
 </Project>
