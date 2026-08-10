@@ -1,0 +1,23 @@
+  Determinando los proyectos que se van a restaurar...
+  Todos los proyectos están actualizados para la restauración.
+D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Core\Orden.cs(42,16): warning CS8618: El elemento propiedad "Descripcion" que no acepta valores NULL debe contener un valor distinto de NULL al salir del constructor. Considere la posibilidad de agregar el modificador "required'"o declarar el propiedad como un valor que acepta valores NULL. [D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Mediciones\Harness\Harness.csproj]
+D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Core\Orden.cs(52,32): warning CS8629: Un tipo que acepta valores NULL puede ser nulo. [D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Mediciones\Harness\Harness.csproj]
+D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Mediciones\Harness\Program.cs(126,29): error CS1503: Argumento 1: no se puede convertir de 'string' a 'System.FormattableString' [D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Mediciones\Harness\Harness.csproj]
+D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Mediciones\Harness\Program.cs(221,17): error CS1503: Argumento 1: no se puede convertir de 'string' a 'System.FormattableString' [D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Mediciones\Harness\Harness.csproj]
+D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Mediciones\Harness\Program.cs(254,17): error CS1503: Argumento 1: no se puede convertir de 'string' a 'System.FormattableString' [D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Mediciones\Harness\Harness.csproj]
+D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Core\Coordinadores\ConfigurationRunService.cs(14,21): warning CS0169: El campo 'ConfigurationRunService.TamanioBuffer' nunca se usa [D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Mediciones\Harness\Harness.csproj]
+
+ERROR al compilar.
+
+D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Core\Orden.cs(42,16): warning CS8618: El elemento propiedad "Descripcion" que no acepta valores NULL debe contener un valor distinto de NULL al salir del constructor. Considere la posibilidad de agregar el modificador "required'"o declarar el propiedad como un valor que acepta valores NULL. [D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Mediciones\Harness\Harness.csproj]
+D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Core\Orden.cs(52,32): warning CS8629: Un tipo que acepta valores NULL puede ser nulo. [D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Mediciones\Harness\Harness.csproj]
+D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Core\Coordinadores\ConfigurationRunService.cs(14,21): warning CS0169: El campo 'ConfigurationRunService.TamanioBuffer' nunca se usa [D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Mediciones\Harness\Harness.csproj]
+D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Mediciones\Harness\Program.cs(126,29): error CS1503: Argumento 1: no se puede convertir de 'string' a 'System.FormattableString' [D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Mediciones\Harness\Harness.csproj]
+D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Mediciones\Harness\Program.cs(221,17): error CS1503: Argumento 1: no se puede convertir de 'string' a 'System.FormattableString' [D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Mediciones\Harness\Harness.csproj]
+D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Mediciones\Harness\Program.cs(254,17): error CS1503: Argumento 1: no se puede convertir de 'string' a 'System.FormattableString' [D:\Usuario\Escritorio\Proyectos\SistemaConcurrente\Mediciones\Harness\Harness.csproj]
+    3 Advertencia(s)
+    3 Errores
+
+Tiempo transcurrido 00:00:01.36
+
+Hay actualizaciones de carga de trabajo disponibles. Ejecute "dotnet workload list" para obtener más información.

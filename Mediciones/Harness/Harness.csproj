@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>SistemaConcurrente.Mediciones</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!-- Compila el Core del proyecto principal directamente (sin pasar por la API ni la DB).
+       Se excluye Persistencia porque depende de EF Core y aca no interviene: la propuesta
+       (secc. 3 punto 3) deja la DB fuera del camino medido. -->
+  <ItemGroup>
+    <Compile Include="..\..\Core\**\*.cs" Exclude="..\..\Core\Persistencia\**" />
+  </ItemGroup>
+
+  <!-- Algunos archivos del Core traen usings de ASP.NET (HealthChecks, Components.Forms).
+       Con la referencia al framework compartido alcanza, sin bajar ningun paquete. -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+</Project>
