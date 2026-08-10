@@ -1,0 +1,283 @@
+================================================================================
+RESUMEN - Experimento de cache lectores/escritores (secc. 7 de la propuesta)
+Preferencia a lectores vs politica justa, variando la proporcion lecturas/escrituras
+Fecha de las corridas: 2026-08-10
+Datos: Mediciones/Resultados/lectores-vs-escritores-resumen.md  (tablas promediadas)
+       Mediciones/Resultados/lectores-vs-escritores-crudo.csv   (una fila por corrida)
+       Mediciones/Resultados/log.txt                            (progreso y detalle)
+Harness: Mediciones/Harness/  (se corre con correr-mediciones-cache.bat)
+
+Este archivo tiene DOS partes:
+  PARTE A - Texto interpretativo, redactado para pegar en el informe.
+  PARTE B - Notas de trabajo: metodologia, caveats a resolver y que queda del punto 7.
+================================================================================
+
+
+================================================================================
+PARTE A - TEXTO PARA EL INFORME
+================================================================================
+
+--------------------------------------------------------------------------------
+A.1 Diseno del experimento (parrafo introductorio de la seccion)
+--------------------------------------------------------------------------------
+
+Ademas de comparar la solucion concurrente contra la secuencial, la propuesta
+plantea analizar el comportamiento de la cache de estado bajo distintas
+proporciones de lecturas y modificaciones, comparando las dos politicas
+implementadas -preferencia a lectores y politica justa- para mostrar en que
+condiciones los escritores se ven perjudicados y como una politica justa
+resuelve ese problema.
+
+Para eso se fijaron todos los parametros del pipeline y se dejo una sola
+variable libre: la presion de lectura sobre la cache. Los escritores son
+siempre los mismos seis hilos (3 productores, que registran cada orden como
+"Generada", y 3 consumidores, que la hacen avanzar a "EnProceso" y luego a
+"Finalizada"), de modo que la actividad de escritura se mantiene sostenida
+durante toda la corrida. Los lectores se dimensionaron como un multiplo k de
+esos seis escritores, barriendo k = 0, 1, 4 y 8, y en el ultimo escenario se
+elimino ademas la pausa entre lecturas para llevar la presion a su maximo.
+
+El indicador central es el tiempo que tarda un escritor en completar una
+escritura en la cache. Como la escritura en si es una unica asignacion sobre un
+Dictionary, ese tiempo es en la practica la espera que la politica le impone al
+escritor: es la magnitud donde la inanicion se vuelve visible. Se reportan su
+promedio, su percentil 95 y su maximo, porque la inanicion es un fenomeno de
+cola: se esconde en los promedios y aparece en los valores extremos. Como
+contrapartida se mide tambien la espera de los lectores y la cantidad de
+lecturas servidas por segundo, que es lo que la preferencia a lectores busca
+maximizar.
+
+La medicion se hizo con un decorador de la interfaz ICache, que envuelve a
+cualquiera de las cuatro caches reales y cronometra cada operacion sin tocar
+las implementaciones evaluadas: los protocolos de sincronizacion que se estan
+comparando quedan intactos. Cada corrida se ejecuta como un proceso
+independiente con un limite de 90 segundos. Esa decision no es un detalle de
+implementacion: bajo inanicion real la corrida no termina nunca, y un proceso
+se puede dar por vencido mientras un hilo bloqueado dentro de la propia corrida
+no. Un limite vencido, entonces, no es una falla del experimento: es el
+resultado.
+
+Parametros fijos: 20.000 ordenes, 5.000 iteraciones, 3 productores,
+3 consumidores, buffer 10. Cada valor promedia 3 corridas, descartando una
+corrida previa de warm-up (JIT).
+
+
+--------------------------------------------------------------------------------
+A.2 Resultado principal: la inanicion existe y es reproducible
+--------------------------------------------------------------------------------
+
+El resultado mas contundente aparece en el escenario de presion maxima
+(48 lectores sin pausa entre lecturas). Con preferencia a lectores, ni la
+variante de semaforos ni la de monitores lograron completar la corrida en
+90 segundos, cuando esa misma carga de 20.000 ordenes se procesa en 0,61
+segundos si no hay lectores: mas de 140 veces el tiempo normal, sin final a la
+vista. Las dos variantes con politica justa, en cambio, terminaron con
+normalidad en el mismo escenario: 3,80 segundos con semaforos y 1,40 segundos
+con monitores.
+
+Esto es exactamente la inanicion de escritores que la teoria predice. Los
+lectores llegan mas rapido de lo que tardan en salir, por lo que la cantidad de
+lectores activos nunca vuelve a cero; como la politica de preferencia a
+lectores solo consulta si hay un escritor activo -y deliberadamente ignora si
+hay escritores esperando-, cada nuevo lector pasa por encima de la cola de
+escritores. Los productores y consumidores quedan detenidos indefinidamente en
+su primera escritura y el pipeline entero se paraliza. Vale subrayar que no se
+trata de una degradacion de rendimiento: es un bloqueo funcional. El sistema
+deja de procesar ordenes.
+
+La politica justa evita esto con dos condiciones que trabajan juntas: la guarda
+de entrada del lector, que lo demora si hay escritores esperando, y la rama de
+lectores del SIGNAL, que exige que no haya escritores demorados para habilitar
+lectores dormidos. La primera frena a los lectores que van llegando; la segunda
+evita que se despierte a los que ya estaban esperando mientras un escritor
+tiene turno pendiente. Ninguna de las dos alcanza por separado, y su efecto
+conjunto es lo que se observa en la tabla: con presion maxima, los escritores
+siguen entrando y la corrida termina.
+
+
+--------------------------------------------------------------------------------
+A.3 Con presion baja o media, la politica justa no tiene costo
+--------------------------------------------------------------------------------
+
+En los escenarios de ratio 0, 1:1, 4:1 y 8:1, las cuatro variantes se comportan
+practicamente igual: tiempos totales entre 0,61 y 0,78 segundos y esperas de
+escritura del orden de los microsegundos (0,001 a 0,006 ms de promedio). Con
+pausa entre lecturas, por alta que sea la cantidad de lectores, siempre quedan
+huecos en los que no hay ningun lector activo, y el escritor entra por esos
+huecos sin necesidad de que nadie le ceda el paso.
+
+La lectura practica es importante para justificar una eleccion de diseno: la
+politica justa no cobra peaje cuando no hay presion. No hay un rango de
+operacion en el que convenga resignar la garantia contra la inanicion para
+ganar rendimiento en las escrituras; el costo de la politica justa aparece del
+otro lado, en los lectores, y solo cuando la presion de lectura es alta.
+
+
+--------------------------------------------------------------------------------
+A.4 Quien paga la justicia: el trade-off del lado de los lectores
+--------------------------------------------------------------------------------
+
+El costo de la politica justa se ve en la espera de los lectores, y crece con
+el ratio. Con monitores, la espera promedio de una lectura pasa de 0,16 ms con
+6 lectores a 0,64 ms con 24 y a 2,12 ms con 48, mientras que bajo preferencia a
+lectores se mantiene plana en torno a 0,06 ms en los tres escenarios. Con
+semaforos el mismo efecto es mas moderado (0,13 -> 0,33 -> 0,43 ms, contra
+0,07-0,09 ms de la preferencia), pero va en la misma direccion.
+
+Esto muestra que la comparacion no es entre una politica correcta y una
+incorrecta. La preferencia a lectores existe porque hace exactamente lo que
+promete: maximiza la concurrencia de lectura y le da a los lectores la latencia
+mas baja posible, de manera estable. Su problema es que esa garantia la ofrece
+a costa de no dar ninguna garantia a los escritores. La politica justa acota la
+espera del escritor y, al hacerlo, le traslada parte de la espera al lector. La
+decision entre una y otra depende entonces del perfil de carga y de que
+garantia se necesita, no de cual es "mejor" en abstracto: con lecturas
+esporadicas las dos sirven, y con presion de lectura sostenida solo la justa
+mantiene el sistema funcionando.
+
+
+--------------------------------------------------------------------------------
+A.5 Un hallazgo lateral: en el limite, el mecanismo si importa
+--------------------------------------------------------------------------------
+
+En el analisis de la solucion secuencial vs concurrente, semaforos y monitores
+resultaron equivalentes en rendimiento. El escenario de presion maxima es el
+primer punto del trabajo donde esa equivalencia se rompe, y el motivo es
+instructivo.
+
+Ambas variantes justas terminan la corrida, pero reparten el ancho de banda de
+forma muy distinta. La justa con semaforos tarda 3,80 segundos y en ese tiempo
+sirve unas 604.000 lecturas (159.000 lecturas por segundo). La justa con
+monitores tarda 1,40 segundos y sirve unas 13.600 lecturas (9.700 por segundo):
+termina casi tres veces mas rapido, pero atiende cuarenta veces menos lecturas.
+
+La explicacion esta en la disciplina de despertado. La version con semaforos
+usa passing the baton: cuando se habilita a un lector, el testigo se le pasa
+directamente y ese lector, al entrar, vuelve a ejecutar el SIGNAL y habilita al
+siguiente, formando una cascada que vacia la cola de lectores sin que ninguno
+tenga que volver a competir. La version con monitores usa signal-and-continue
+con PulseAll: los hilos despertados no reciben el turno, sino que vuelven a
+competir por el lock del monitor junto con los que recien llegan, y en esa
+competencia los lectores ganan con mucha menor frecuencia. El resultado es que
+la version con semaforos favorece el rendimiento de las lecturas y la de
+monitores favorece el avance de las escrituras -y por lo tanto el throughput de
+ordenes-, aunque las dos implementen la misma politica en el plano logico.
+
+De aca se desprende una observacion que conviene dejar asentada: la politica
+define quien tiene prioridad, pero el mecanismo de sincronizacion define como
+se reparte concretamente el acceso entre los hilos que la politica habilita.
+Dos implementaciones logicamente equivalentes pueden dar perfiles de
+rendimiento muy distintos en condiciones de saturacion.
+
+
+--------------------------------------------------------------------------------
+A.6 El efecto sobre el sistema completo
+--------------------------------------------------------------------------------
+
+Conviene cerrar senalando que todo esto no queda encerrado en la cache. La
+cache es un recurso compartido que atraviesa el pipeline: los productores y
+consumidores escriben en ella en cada transicion de estado, de modo que la
+politica de la cache termina condicionando el procesamiento de ordenes.
+
+Con presion maxima y politica justa con semaforos, el throughput cae de 32.400
+a 5.260 ordenes por segundo -seis veces menos- y la latencia promedio de una
+orden sube de 0,40 a 2,79 ms, aun sin ningun cambio en la cantidad de
+productores, consumidores o en el tamanio del buffer. Y con preferencia a
+lectores el throughput directamente se anula, porque la corrida no termina. Un
+detalle de sincronizacion en un recurso auxiliar es capaz de dominar el
+rendimiento del sistema entero, o de detenerlo por completo.
+
+
+================================================================================
+PARTE B - NOTAS DE TRABAJO (no van en el informe)
+================================================================================
+
+--------------------------------------------------------------------------------
+B.1 Numeros de respaldo de cada afirmacion de la Parte A
+--------------------------------------------------------------------------------
+
+Todos los valores salen de lectores-vs-escritores-resumen.md (promedio de 3
+corridas, warm-up descartado). Esc = espera de escritura; Lect = espera de
+lectura.
+
+Referencia sin lectores (L0), las 4 variantes:
+  tiempo 0,611-0,639 s | throughput 31.300-32.800 ord/s | Esc prom ~0,0005 ms
+
+Escenario de presion maxima (L4: 48 lectores, sin pausa):
+  SemaforosLectores  -> INANICION (no completo en 90 s)
+  MonitoresLectores  -> INANICION (no completo en 90 s)
+  SemaforosJusta     -> 3,804 s | 5.259 ord/s | Esc prom 0,207 | Esc max 43,8 | 158.801 lect/s
+  MonitoresJusta     -> 1,399 s | 14.300 ord/s | Esc prom 0,056 | Esc max 4,6 |   9.718 lect/s
+
+Espera de LECTURA promedio (ms), preferencia vs justa, por escenario:
+  Semaforos: L1 0,086 vs 0,129 | L2 0,073 vs 0,329 | L3 0,091 vs 0,425
+  Monitores: L1 0,088 vs 0,163 | L2 0,069 vs 0,679 | L3 0,060 vs 2,124
+
+Espera de ESCRITURA promedio (ms) en L1-L3: entre 0,001 y 0,006 en las cuatro
+variantes (ordenes de magnitud por debajo de L4).
+
+Reproducibilidad: las 3 repeticiones de cada combinacion quedan dentro de un
+10% entre si (ver el CSV crudo), y las dos inaniciones se dieron de forma
+deterministica, no como un caso aislado.
+
+
+--------------------------------------------------------------------------------
+B.2 CAVEATS A RESOLVER ANTES DE ENTREGAR
+--------------------------------------------------------------------------------
+
+[ ] HARDWARE: estas corridas registraron 8 procesadores logicos, pero el
+    informe declara un Ryzen 7 5700G (8 nucleos / 16 hilos) en la seccion de
+    analisis de performance. O se corrieron en otra maquina, o hay que
+    revisarlo. Dos salidas posibles:
+      a) volver a correr correr-mediciones-cache.bat en la maquina del informe
+         (es lo preferible: deja toda la seccion 7 sobre el mismo hardware);
+      b) aclarar en el informe que esta seccion se midio en otra maquina y
+         detallar cual.
+    Ojo: si se re-corre, los numeros de la Parte A hay que actualizarlos.
+
+[ ] GRANULARIDAD DEL TIMER: el intervalo de 1 ms entre lecturas se comporto en
+    realidad como ~15 ms, por la resolucion del timer de Windows que usa
+    Thread.Sleep. Se ve en el crudo: con 6 lectores se sirven ~375 lecturas por
+    segundo, es decir ~62 por lector, o un ciclo cada ~16 ms. No invalida el
+    barrido (el orden de los escenarios y la tendencia se mantienen), pero
+    conviene una linea en el informe aclarandolo, porque explica por que los
+    escenarios L1-L3 dan esperas de escritura tan bajas y por que la perilla
+    que realmente genero presion sostenida fue el intervalo 0 de L4.
+
+[ ] Si se quiere un barrido mas fino entre L3 y L4, el camino es agregar
+    escenarios con intervalo 0 y menos lectores (por ejemplo 6, 12 y 24 sin
+    pausa), para ubicar el umbral donde la inanicion aparece. Hoy el salto de
+    L3 a L4 es grande: no se sabe con cuantos lectores sin pausa empieza el
+    problema. Es opcional; el punto de la propuesta ya queda demostrado.
+
+
+--------------------------------------------------------------------------------
+B.3 ESTADO DEL PUNTO 7 DE LA PROPUESTA
+--------------------------------------------------------------------------------
+
+Bloque 1 - Comparacion con la solucion secuencial:
+  [OK] Medido y redactado (6 escenarios, tablas en el .docx).
+  [ ] Desvio a justificar: la propuesta menciona 1.000 / 5.000 / 10.000
+      ordenes y se midio con 5.000 y 30.000. O se agrega una corrida de 1.000,
+      o se explica el cambio en una linea.
+
+Bloque 2 - Comportamiento bajo distintas configuraciones:
+  [OK] Variacion de productores y consumidores (escenarios 3 a 6).
+  [OK] Variacion del volumen de ordenes.
+  [OK] Cache bajo distintas proporciones de lecturas/escrituras: ESTE
+       experimento. Datos y redaccion listos.
+  [ ] TAMANIO DE BUFFER: sigue pendiente. Quedo fijo en 10 en todos los
+      escenarios y la propuesta lo enumera explicitamente entre las variables a
+      barrer. Se cierra rapido con un barrido corto -por ejemplo buffer 1, 10 y
+      100 sobre la carga del escenario 4- que muestre el efecto de un buffer
+      chico (mas bloqueos por buffer lleno/vacio) frente a uno holgado.
+
+Transversal:
+  [ ] La propuesta promete tablas Y GRAFICOS comparativos. Hoy hay tablas.
+      Candidatos de grafico con estos datos: espera de lectura vs ratio de
+      lectores (una linea por variante, con L4 marcado aparte por la
+      inanicion), y throughput de ordenes por escenario.
+  [ ] Comparacion cualitativa semaforos vs monitores (secc. 6): el hallazgo de
+      A.5 es material util para esa seccion, porque matiza el empate tecnico
+      encontrado en el bloque 1.
+================================================================================

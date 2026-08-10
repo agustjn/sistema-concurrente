@@ -123,8 +123,7 @@ namespace SistemaConcurrente.Mediciones
 
                         var r = resultado!;
                         csv.AppendLine(FormattableString.Invariant(
-                            $"{esc.Nombre};{variante};{rep};{(esWarmup ? 1 : 0)};0;{r.Ordenes};{r.TiempoSeg:F3};{r.Throughput:F0};{r.LatenciaPromMs:F3};" +
-                            $"{r.Escrituras};{r.EscPromMs:F4};{r.EscP95Ms:F4};{r.EscMaxMs:F2};{r.Lecturas};{r.LecPromMs:F4};{r.LecP95Ms:F4};{r.LecMaxMs:F2};{r.LecturasPorSeg:F0}"));
+                            $"{esc.Nombre};{variante};{rep};{(esWarmup ? 1 : 0)};0;{r.Ordenes};{r.TiempoSeg:F3};{r.Throughput:F0};{r.LatenciaPromMs:F3};{r.Escrituras};{r.EscPromMs:F4};{r.EscP95Ms:F4};{r.EscMaxMs:F2};{r.Lecturas};{r.LecPromMs:F4};{r.LecP95Ms:F4};{r.LecMaxMs:F2};{r.LecturasPorSeg:F0}"));
 
                         if (!esWarmup) agregados[clave].Add(r);
                         Log(FormattableString.Invariant(
@@ -218,9 +217,7 @@ namespace SistemaConcurrente.Mediciones
             double t = resultado.TiempoTotalSegundos;
 
             Console.WriteLine(FormattableString.Invariant(
-                $"RESULTADO;{resultado.Ordenes.Count};{t:F4};{(t > 0 ? resultado.Ordenes.Count / t : 0):F1};{latenciaProm:F4};" +
-                $"{esc.Count};{Promedio(esc):F5};{Percentil(esc, 0.95):F5};{Maximo(esc):F3};" +
-                $"{lec.Count};{Promedio(lec):F5};{Percentil(lec, 0.95):F5};{Maximo(lec):F3}"));
+                $"RESULTADO;{resultado.Ordenes.Count};{t:F4};{(t > 0 ? resultado.Ordenes.Count / t : 0):F1};{latenciaProm:F4};{esc.Count};{Promedio(esc):F5};{Percentil(esc, 0.95):F5};{Maximo(esc):F3};{lec.Count};{Promedio(lec):F5};{Percentil(lec, 0.95):F5};{Maximo(lec):F3}"));
             return 0;
         }
 
@@ -251,8 +248,7 @@ namespace SistemaConcurrente.Mediciones
             sb.AppendLine("# Cache lectores/escritores: preferencia a lectores vs politica justa");
             sb.AppendLine();
             sb.AppendLine(FormattableString.Invariant(
-                $"Parametros fijos: {Ordenes:N0} ordenes, {Iteraciones:N0} iteraciones, {Productores} productores + " +
-                $"{Consumidores} consumidores (= 6 escritores de cache), buffer {CapacidadBuffer}."));
+                $"Parametros fijos: {Ordenes:N0} ordenes, {Iteraciones:N0} iteraciones, {Productores} productores + {Consumidores} consumidores (= 6 escritores de cache), buffer {CapacidadBuffer}."));
             sb.AppendLine(FormattableString.Invariant(
                 $"Cada celda promedia {Medidas} corridas (se descarta una corrida previa de warm-up). Timeout por corrida: {TimeoutSegundos} s."));
             sb.AppendLine($"Hardware: {Environment.ProcessorCount} procesadores logicos. Fecha: {DateTime.Now:yyyy-MM-dd}.");
