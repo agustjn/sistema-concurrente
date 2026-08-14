@@ -1,17 +1,16 @@
-using SistemaConcurrente.Core;
+﻿using SistemaConcurrente.Core;
 using SistemaConcurrente.DTOs;
 
 namespace SistemaConcurrente.Utils
 {
-    // Toma las ordenes reales completadas de una corrida y arma el ApisResponse (el JSON de metricas).
+    // Arma el ApisResponse con las metricas de una corrida a partir de las ordenes completadas.
     public static class CalculadoraMetricas
     {
         public static ApisResponse Calcular(IReadOnlyList<Orden> ordenes, double tiempoTotalSeg, string tecnica)
         {
             int n = ordenes.Count;
 
-            // Si no se proceso nada, devolvemos un response en cero (evita dividir por 0 / promedios
-            // sobre vacio, y no convierte una corrida vacia en un 500 de la API).
+            // Si no se proceso nada devuelvo el response en cero, para no dividir por cero.
             if (n == 0)
                 return new ApisResponse { Tecnica = tecnica };
 
@@ -22,18 +21,16 @@ namespace SistemaConcurrente.Utils
                 .OrderBy(latenciaMs => latenciaMs)
                 .ToList();
 
-            // Espera en buffer (InsertadoEnBufferEn -> RetiradoDeBufferEn): solo aplica si la
-            // corrida paso por un buffer. En la secuencial esos timestamps son null y la metrica
-            // no corresponde: queda null ("la pregunta no aplica"), no cero ("espero 0 ms").
+            // Espera en buffer: solo aplica en las corridas concurrentes. En la secuencial no hay
+            // buffer, asi que los timestamps son null y la metrica queda en null.
             bool huboBuffer = ordenes[0].InsertadoEnBufferEn.HasValue && ordenes[0].RetiradoDeBufferEn.HasValue;
 
             double? esperaBufferProm = huboBuffer
                 ? ordenes.Average(o => (o.RetiradoDeBufferEn!.Value - o.InsertadoEnBufferEn!.Value).TotalMilliseconds)
                 : null;
 
-            // Tiempo de procesamiento: en el concurrente es RetiradoDeBufferEn -> CompletadoEn
-            // (lo que trabajo el consumidor); en el secuencial no hay retiro, asi que es
-            // CreadoEn -> CompletadoEn (la orden entera, sus dos simulaciones).
+            // Tiempo de procesamiento: en el concurrente va de RetiradoDeBufferEn a CompletadoEn.
+            // En el secuencial no hay retiro, asi que se mide de CreadoEn a CompletadoEn.
             double procesamientoProm = huboBuffer
                 ? ordenes.Average(o => (o.CompletadoEn!.Value - o.RetiradoDeBufferEn!.Value).TotalMilliseconds)
                 : ordenes.Average(o => (o.CompletadoEn!.Value - o.CreadoEn).TotalMilliseconds);
@@ -53,16 +50,7 @@ namespace SistemaConcurrente.Utils
             };
         }
 
-        //  Percentil sobre una lista YA ordenada ascendente. p en [0,1] (ej. 0.95 = P95).
-
-        //  ¿Qué es el P95(percentil 95)?
-
-        //  Es el valor de latencia por debajo del cual cae el 95% de las órdenes. Dicho de otra forma: solo el 5% más lento supera ese número.
-        //  Es una métrica clásica de rendimiento porque el promedio engaña. Mirá este ejemplo con 20 latencias (en ms):
-        //  10, 11, 11, 12, 12, 12, 13, 13, 13, 14, 14, 14, 15, 15, 16, 16, 17, 18, 19, 350
-        //  Promedio ≈ 27 ms → parece "ok", pero ninguna orden real tardó eso; el 350 lo infla.
-        //  P95 = 19 ms → el 95% de las órdenes terminó en 19 ms o menos.
-        //  Máximo = 350 ms → el peor caso puntual.
+        // Percentil sobre la lista ya ordenada ascendente. p en [0,1] (ej. 0.95 = P95).
         private static double Percentil(List<double> ordenados, double p)
         {
             int idx = (int)Math.Ceiling(p * ordenados.Count) - 1;

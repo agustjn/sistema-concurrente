@@ -1,4 +1,4 @@
-using SistemaConcurrente.Core.Buffer;
+﻿using SistemaConcurrente.Core.Buffer;
 using SistemaConcurrente.Core.Cache;
 using SistemaConcurrente.Core.Cache.CacheMonitores;
 using SistemaConcurrente.Core.Cache.CacheSemaforos;
@@ -7,26 +7,19 @@ using Xunit;
 
 namespace SistemaConcurrente.Tests.Fixtures
 {
-    // Una combinacion buffer x cache, la misma que arma cada endpoint de ApisConcurrentes.
-    //
-    // Los tests reciben FABRICAS (Func) y no instancias: cada corrida necesita
-    // buffer y cache NUEVOS, porque los dos guardan estado (indices, contadores, semaforos)
-    // y si se reutilizaran entre corridas se contaminarian entre si, igual que pasa con
-    // GeneradorIdsOrden, que se instancia una vez por corrida.
+    // Una combinacion de buffer y cache, la misma que arma cada endpoint.
+    // Se pasan fabricas (Func) y no instancias, ya que cada corrida necesita buffer y cache
+    // nuevos porque ambos guardan estado y se contaminarian entre corridas.
     public record VarianteRun(string Tecnica, Func<int, IBuffer> CrearBuffer, Func<ICache> CrearCache)
     {
-        // Para que el runner muestre el nombre de la variante en cada caso del [Theory],
-        // en vez de un "VarianteRun { ... }" ilegible.
+        // Para que el runner muestre el nombre de la variante en cada caso del Theory.
         public override string ToString() => Tecnica;
     }
 
     public static class Variantes
     {
-        // Las 4 combinaciones de la API, con las mismas etiquetas de tecnica que usan los
-        // endpoints. LA IDEA ARQUITECTONICA CENTRAL del sistema (los actores dependen SOLO
-        // de IBuffer e ICache) es lo que permite que UN MISMO test corra contra todas sin
-        // tocar una linea: se cambia la tecnica de sincronizacion y el codigo de alrededor
-        // es exactamente el mismo.
+        // Las 4 combinaciones de la API. Como los actores dependen solo de IBuffer e ICache,
+        // el mismo test corre contra todas sin cambiar nada.
         public static TheoryData<VarianteRun> Todas => new()
         {
             new VarianteRun("SemaforosJusta",
@@ -40,9 +33,8 @@ namespace SistemaConcurrente.Tests.Fixtures
         };
     }
 
-    // Helper unico para lanzar corridas: el mismo camino que recorre un endpoint pero sin
-    // HTTP, directo contra ConfigurationRunService. Asi los tests miden la sincronizacion
-    // y no el aparato web de alrededor.
+    // Lanza una corrida por el mismo camino que un endpoint pero sin HTTP, directo contra
+    // ConfigurationRunService.
     public static class Corridas
     {
         public static Task<ResultadoEjecucion> Ejecutar(
@@ -55,8 +47,7 @@ namespace SistemaConcurrente.Tests.Fixtures
             int lectores = 2,
             int intervaloMsDeLecturas = 10)
         {
-            // Armo el servicio igual que lo arma el endpoint: cache y buffer RECIEN creados
-            // por las fabricas de la variante, y el resto de la config como parametros.
+            // Armo el servicio igual que el endpoint, con cache y buffer recien creados.
             var service = new ConfigurationRunService(
                 productores,
                 consumidores,
@@ -67,43 +58,32 @@ namespace SistemaConcurrente.Tests.Fixtures
                 variante.CrearBuffer(capacidadBuffer),
                 intervaloMsDeLecturas);
 
-            // Ejecutar() lanza los hilos de verdad (Thread, no Task), espera los Join de
-            // productores y consumidores, y devuelve las completadas + el tiempo medido.
+            // Ejecutar() lanza los hilos, espera los Join y devuelve las completadas y el tiempo.
             return service.Ejecutar();
         }
 
-        // EL indicador de correctitud de la propuesta: N ingresadas -> N
-        // procesadas exactamente una vez, sin perdidas ni duplicados. Lo comparten
-        // los tests correctitud, estres y deadlock: en los tres casos "terminar bien" es esto
+        // Verificacion de correctitud compartida por los tests de correctitud, estres y deadlock:
+        // las N ordenes ingresadas tienen que salir procesadas exactamente una vez.
         public static void VerificarExactamenteUnaVez(ResultadoEjecucion resultado, int n)
         {
-            // COMPROBACION 1: no se PERDIO ninguna orden. Se pidieron N y la bolsa de
-            // completadas tiene que tener exactamente N. Si un consumidor pisara una
-            // orden de otro, o una orden quedara colgada en el buffer, aca da distinto
+            // No se perdio ninguna orden: se pidieron N y tienen que haber N completadas.
             Assert.Equal(n, resultado.Ordenes.Count);
 
-            // COMPROBACION 2: sin perdidas NI DUPLICADOS, las dos a la vez. GeneradorIdsOrden
-            // reparte los Ids 1..N de forma atomica, asi que los Ids de las completadas,
-            // ordenados, tienen que ser EXACTAMENTE el rango 1..N:
-            //  - si falta un Id -> se perdio una orden (la secuencia salta un numero)
-            //  - si un Id aparece dos veces -> se proceso dos veces (y ademas faltaria otro,
-            //    porque la cuenta total ya dio N en la comprobacion 1)
+            // Sin perdidas ni duplicados: como GeneradorIdsOrden reparte los Ids 1..N de forma
+            // atomica, los Ids de las completadas ordenados tienen que dar exactamente ese rango.
             Assert.Equal(Enumerable.Range(1, n),
                          resultado.Ordenes.Select(o => o.Id).OrderBy(id => id));
 
-            // COMPROBACION 3: cada una de las N ordenes fue REALMENTE procesada.
+            // Cada orden fue realmente procesada.
             Assert.All(resultado.Ordenes, o =>
             {
-                // Ninguna orden veneno se colo como orden real: las poison pills existen
-                // solo para cortar a los consumidores y jamas deben llegar a la bolsa
+                // Ninguna orden veneno llego a la bolsa de completadas.
                 Assert.False(o.esFin);
 
-                // El consumidor sello CompletadoEn al terminar de procesarla. Si esta en
-                // null, la orden entro a la bolsa sin pasar por el procesamiento
+                // El consumidor sello CompletadoEn al terminar de procesarla.
                 Assert.NotNull(o.CompletadoEn);
 
-                // Y el computo simulado dejo su resultado: la orden no salteo el
-                // SimularProcesamiento del consumidor
+                // Y quedo el resultado del computo simulado.
                 Assert.NotNull(o.ValorCalculado);
             });
         }

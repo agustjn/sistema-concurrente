@@ -1,27 +1,19 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using SistemaConcurrente.Core.Cache;
 using SistemaConcurrente.Core.Coordinadores;
 
 namespace SistemaConcurrente.Core
 {
     
-    // Que SE REPLICA del concurrente, para que la comparacion sea justa:
-    //   - DOS SimularProcesamiento (proceos q simula el computo complejo) por orden: en el concurrente el productor computa antes de
-    //     depositar y el consumidor vuelve a compiutar al retirar: aca tambien se hace dos
-    //     veces, o la linea base haria la mitad del computo.
-    //   - El registro de estados Generada -> EnProceso -> Finalizada, pero sobre un Dictionary
-    //     comun
-    //   - La misma instrumentacion de tiempos de Orden (CreadoEn / CompletadoEn / latencia).
-    //
-    // Que NO se replica, porque solo tiene sentido entre hilos simultaneos:
-    //   - El buffer
-    //   - Los hilos lectores
+    // Version secuencial usada como linea base. Hace el mismo computo que la concurrente
+    // (dos SimularProcesamiento por orden) y registra los mismos estados y tiempos, pero sin
+    // buffer ni hilos lectores, ya que eso solo tiene sentido entre hilos simultaneos.
     public class ProcesadorSecuencial
     {
         private readonly int _cantOrdenes;
         private readonly int _cantIteraciones;
 
-        // Estados de las ordenes en un diccionario pelado, sin sincronizacion: un solo hilo.
+        // Un solo hilo, asi que el diccionario de estados va sin sincronizacion
         private readonly Dictionary<int, EstadoOrden> _estados = new();
         private readonly List<Orden> _ordenesCompletadas = new();
 
@@ -37,12 +29,12 @@ namespace SistemaConcurrente.Core
 
             for (int id = 1; id <= _cantOrdenes; id++)
             {
-                // ---- lado "productor" ----
+                // lado productor
                 Orden orden = new Orden(id, "Secuencial");
                 orden.ValorCalculado = this.SimularProcesamiento(orden.Monto);
                 _estados[orden.Id] = EstadoOrden.Generada;
 
-                // ---- lado "consumidor" ----
+                // lado consumidor
                 _estados[orden.Id] = EstadoOrden.EnProceso;
                 orden.ValorCalculado = this.SimularProcesamiento(orden.Monto);
                 orden.CompletadoEn = DateTime.Now;
@@ -56,7 +48,7 @@ namespace SistemaConcurrente.Core
             return new ResultadoEjecucion(_ordenesCompletadas, sw.Elapsed.TotalSeconds);
         }
 
-        // Copia exacta del SimularProcesamiento de Productor/Consumidor
+        // Mismo SimularProcesamiento que usan Productor y Consumidor
         private double SimularProcesamiento(double monto)
         {
             double x = monto;

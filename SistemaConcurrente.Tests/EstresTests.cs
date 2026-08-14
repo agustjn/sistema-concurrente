@@ -1,26 +1,13 @@
-using SistemaConcurrente.Tests.Fixtures;
+﻿using SistemaConcurrente.Tests.Fixtures;
 using Xunit;
 
 namespace SistemaConcurrente.Tests
 {
-    // Indicador "sin race conditions" de la propuesta (secc. 6): prueba de estres con
-    // muchos productores y consumidores concurrentes, sin perdidas ni duplicados.
-    //
-    // Las configs estan elegidas para MAXIMIZAR LA CONTENCION sobre la sincronizacion
-    // (que es donde las races se destapan), no el throughput:
-    //
-    //  - buffer = 1: cada deposito y cada retiro pelean por el UNICO lugar del arreglo;
-    //    los hilos se demoran y despiertan todo el tiempo. Es el peor caso de las
-    //    condiciones de sincronizacion: el buffer esta siempre lleno o siempre vacio.
-    //  - desbalance P >> C y C >> P: una punta del buffer permanentemente saturada,
-    //    con varios hilos del mismo rol compitiendo entre si por la misma condicion
-    //    (el caso del while vs if en los monitores, y del contador en los semaforos).
-    //  - volumen alto de ordenes: mas pasadas totales por las barreras de sincronizacion
-    //    por corrida -> mas interleavings distintos, mas chances de pisar una ventana
-    //    mal protegida.
-    //
-    // Como las races son PROBABILISTICAS (una corrida limpia no prueba nada), cada caso
-    // se repite varias veces con buffer y cache nuevos en cada vuelta.
+    // Test de estres para el indicador de ausencia de race conditions. Las configuraciones
+    // buscan maxima contencion sobre la sincronizacion y no throughput: buffer de capacidad 1,
+    // desbalance entre productores y consumidores, y volumen alto de ordenes con computo bajo.
+    // Como las race conditions son probabilisticas, cada caso se repite varias veces con
+    // buffer y cache nuevos.
     public class EstresTests
     {
         private const int Repeticiones = 2;

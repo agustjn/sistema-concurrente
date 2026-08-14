@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace SistemaConcurrente.Core.Persistencia
 {
@@ -13,9 +13,8 @@ namespace SistemaConcurrente.Core.Persistencia
             var orden = modelBuilder.Entity<OrdenPersistencia>();
             orden.ToTable("Orden");
 
-            // PK = el id que genero GeneradorIdsOrden. ValueGeneratedNever le avisa
-            // a EF que el id viene de la aplicacion (sin identity): si llegara un
-            // duplicado, la PK lo rechaza -> "persistida exactamente una vez".
+            // PK = el id que genera GeneradorIdsOrden. ValueGeneratedNever le avisa a EF que el id
+            // viene de la aplicacion, asi un duplicado lo rechaza la PK.
             orden.HasKey(o => o.OrdenId);
             orden.Property(o => o.OrdenId).ValueGeneratedNever();
 

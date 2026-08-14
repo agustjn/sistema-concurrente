@@ -1,4 +1,4 @@
-using SistemaConcurrente.Core.Buffer;
+﻿using SistemaConcurrente.Core.Buffer;
 using SistemaConcurrente.Core.Cache;
 using System.Collections.Concurrent;
 
@@ -14,8 +14,7 @@ namespace SistemaConcurrente.Core
 
         public int CantIteraciones { get; }
 
-        // Bolsa compartida (misma instancia para todos los consumidores) donde se acumulan las
-        // ordenes reales completadas, para luego calcular las metricas.
+        // Bolsa compartida donde se acumulan las ordenes completadas para calcular metricas.
         private readonly ConcurrentBag<Orden> _ordenesCompletadas;
 
 
@@ -48,8 +47,7 @@ namespace SistemaConcurrente.Core
 
                 // ESCRITURA en cache: termine de procesar -> "Finalizada".
                 _cache.Escribir(orden.Id, EstadoOrden.Finalizada);
-                // Comentado a proposito: un print por orden serializa los hilos (la consola tiene su
-                // propio lock interno) y arruina la medicion de performance.
+                // Comentado: un print por orden serializa los hilos y arruina la medicion.
                 //Console.WriteLine("Orden #" + orden.Id + " completada / Consumidor #" + Id.ToString());
             }
 

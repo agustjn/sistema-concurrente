@@ -1,11 +1,9 @@
-using SistemaConcurrente.Core.Cache;
+﻿using SistemaConcurrente.Core.Cache;
 
 namespace SistemaConcurrente.Core
 {
-    // Hilo LECTOR de la cache. A diferencia de productores y consumidores (que ESCRIBEN el
-    // estado de las ordenes), el lector solo CONSULTA: cada cierto intervalo pide un resumen
-    // de la cache y lo muestra. Sirve para ejercitar el lado "lector" del problema
-    // lectores/escritores, mientras productores y consumidores escriben en paralelo
+    // Hilo lector de la cache. A diferencia de productores y consumidores, que escriben el
+    // estado de las ordenes, el lector solo consulta el resumen cada cierto intervalo.
     public class LectorCache
     {
         public int Id { get; set; }
@@ -24,8 +22,7 @@ namespace SistemaConcurrente.Core
             _intervaloMs = intervaloMsDeLecturas;
         }
 
-        // Lee la cache periodicamente hasta que la corrida pide cancelar (cuando ya no quedan
-        // ordenes por procesar). El token es la senial de "fin de corrida".
+        // Lee la cache periodicamente hasta que la corrida pide cancelar.
         public void LeerPeriodicamente(CancellationToken token)
         {
             while (!token.IsCancellationRequested)

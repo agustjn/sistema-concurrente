@@ -1,4 +1,4 @@
-namespace SistemaConcurrente.Core.Cache.CacheMonitores
+﻿namespace SistemaConcurrente.Core.Cache.CacheMonitores
 {
     public class CacheMonitoresLectores : ICache
     {
@@ -28,12 +28,12 @@ namespace SistemaConcurrente.Core.Cache.CacheMonitores
             return estado;
         }
 
-        //  LECTOR: resumen (conteo por estado) de toda la cache. Misma sincronizacion de lector.
+        // LECTOR: resumen (conteo por estado) de toda la cache. Misma sincronizacion de lector.
         public ResumenCache LeerResumen()
         {
             this.PedidoLeer();
 
-            // ---------- seccion de lectura (CONCURRENTE entre lectores) ----------
+            // seccion de lectura (CONCURRENTE entre lectores)
             int generadas = 0, enProceso = 0, finalizadas = 0;
             foreach (var estado in _estados.Values)
             {
@@ -44,7 +44,6 @@ namespace SistemaConcurrente.Core.Cache.CacheMonitores
                     case EstadoOrden.Finalizada: finalizadas++; break;
                 }
             }
-            // ---------------------------------------------------------------------
 
             this.LiberaLeer();
             return new ResumenCache(generadas, enProceso, finalizadas);
@@ -59,8 +58,8 @@ namespace SistemaConcurrente.Core.Cache.CacheMonitores
                 while (escritoresActivos > 0 || lectoresActivos > 0)
                     Monitor.Wait(_monitor);
 
-                // Me marco activo ANTES de soltar el monitor: desde aca cualquier otro que pida
-                // entrar (lector o escritor) va a ver escritoresActivos > 0 y se va a demorar.
+                // Me marco activo antes de soltar el monitor: desde aca cualquier otro que quiera entrar
+                // va a ver escritoresActivos > 0 y se demora.
                 escritoresActivos++;
             }
         }
@@ -95,8 +94,8 @@ namespace SistemaConcurrente.Core.Cache.CacheMonitores
             lock (_monitor)
             {
                 lectoresActivos--;
-                // Solo tiene sentido avisar si fui el ULTIMO lector: recien ahi un escritor demorado
-                // puede llegar a pasar su while
+                // Solo tiene sentido avisar si fui el ultimo lector: recien ahi un escritor demorado
+                // puede pasar su while
                 if (lectoresActivos == 0)
                     Monitor.PulseAll(_monitor);
             }

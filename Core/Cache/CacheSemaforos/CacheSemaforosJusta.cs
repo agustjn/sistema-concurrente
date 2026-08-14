@@ -1,4 +1,4 @@
-namespace SistemaConcurrente.Core.Cache.CacheSemaforos
+﻿namespace SistemaConcurrente.Core.Cache.CacheSemaforos
 {
 
     public class CacheSemaforosJusta : ICache
@@ -53,14 +53,12 @@ namespace SistemaConcurrente.Core.Cache.CacheSemaforos
             return resultado;
         }
 
-        // ------------------------------------------------------------------------------------
-        //  LECTOR: resumen (conteo por estado) de toda la cache. Misma sincronizacion de lector.
-        // ------------------------------------------------------------------------------------
+        // LECTOR: resumen (conteo por estado) de toda la cache. Misma sincronizacion de lector.
         public ResumenCache LeerResumen()
         {
             EntrarComoLector();
 
-            // ---------- seccion de lectura (CONCURRENTE entre lectores) ----------
+            // seccion de lectura (CONCURRENTE entre lectores)
             int generadas = 0, enProceso = 0, finalizadas = 0;
             foreach (var estado in _estados.Values)
             {
@@ -71,22 +69,18 @@ namespace SistemaConcurrente.Core.Cache.CacheSemaforos
                     case EstadoOrden.Finalizada: finalizadas++; break;
                 }
             }
-            // ---------------------------------------------------------------------
 
             SalirComoLector();
             return new ResumenCache(generadas, enProceso, finalizadas);
         }
 
-        //    1) Si pueden leer (no hay escritor activo NI escritores esperando) y hay lectores
-        //       demorados -> despierta a UN lector. (En cascada, ese lector volvera a llamar a
-        //       este SIGNAL y despertara al siguiente, hasta vaciar la cola de lectores.)
-        //    2) Si no, si puede escribir (no hay lectores ni escritores activos) y hay escritores
-        //       demorados -> despierta a UN escritor.
-        //    3) Si nadie puede avanzar -> libera la entrada (suelta el testigo).
-        //
-        //  La condicion de la rama (1) es la clave de la politica JUSTA: incluye
-        //  "escritoresDemorados == 0", de modo que mientras haya un escritor esperando NO se
-        //  habilitan lectores nuevos, evitando que los escritores mueran de hambre.
+        // SIGNAL: al soltar el testigo decide a quien le pasa el baton.
+        //  1) Si no hay escritor activo ni escritores esperando y hay lectores demorados,
+        //     despierta a UN lector, que al salir repite este SIGNAL (cascada de lectores).
+        //  2) Si no hay nadie activo y hay escritores demorados, despierta a UN escritor.
+        //  3) Si nadie puede avanzar, libera la entrada.
+        // La condicion de (1) es la de la politica justa: mientras haya un escritor esperando no
+        // entran lectores nuevos, y asi los escritores no quedan en inanicion.
         private void Signal()
         {
             if (escritoresActivos == 0 && escritoresDemorados == 0 && lectoresDemorados > 0)
@@ -116,8 +110,7 @@ namespace SistemaConcurrente.Core.Cache.CacheSemaforos
                 _colaLectores.Wait();                         // P(r): duermo; despierto CON el testigo
             }
             lectoresActivos++;
-            // Cascada: si quedan mas lectores demorados (y se puede leer), los voy despertando uno
-            // a uno; cada uno repite este SIGNAL hasta vaciar la cola de lectores.
+            // Cascada: si quedan lectores demorados los voy despertando de a uno.
             Signal();
         }
 

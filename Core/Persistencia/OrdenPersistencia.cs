@@ -1,13 +1,8 @@
-namespace SistemaConcurrente.Core.Persistencia
+﻿namespace SistemaConcurrente.Core.Persistencia
 {
-    // Fila de la tabla Ordenes: el espejo persistido de una Orden completada.
-    //
-    // El Id de la orden es la PK y NO es identity: es el id que repartio
-    // GeneradorIdsOrden (1..N). Como cada endpoint limpia la tabla antes de correr,
-    // la PK garantiza a nivel base de datos el indicador de correctitud de la
-    // propuesta: si un consumidor procesara (y guardara) la misma orden dos veces,
-    // el insert duplicado revienta. "Persistida exactamente una vez" lo controla
-    // la DB, no el codigo.
+    // Fila de la tabla Ordenes. El Id es la PK y no es identity: es el que reparte
+    // GeneradorIdsOrden (1..N), asi que si una orden se guardara dos veces el insert falla
+    // y el duplicado lo detecta la propia base.
     public class OrdenPersistencia
     {
         public int OrdenId { get; set; }
@@ -18,8 +13,7 @@ namespace SistemaConcurrente.Core.Persistencia
         public double Monto { get; set; }
         public double? ValorCalculado { get; set; }
 
-        // Misma instrumentacion de tiempos que Orden. Los dos del buffer quedan
-        // null en la corrida secuencial (no hay buffer; la metrica "no aplica").
+        // Mismos tiempos que Orden. Los dos del buffer quedan en null en la corrida secuencial.
         public DateTime CreadoEn { get; set; }
         public DateTime? InsertadoEnBufferEn { get; set; }
         public DateTime? RetiradoDeBufferEn { get; set; }
